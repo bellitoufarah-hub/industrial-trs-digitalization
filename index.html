@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Suivi TRS — SOFRENOR</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand">
+        <img src="logo-sofrenor.webp" alt="Logo SOFRENOR" />
+        <div>
+          <p>SOFRENOR</p>
+          <h1>Suivi TRS — SOFRENOR</h1>
+        </div>
+      </div>
+      <div id="sessionBox" class="session-box hidden">
+        <span id="currentUser"></span>
+        <button id="logoutBtn" class="ghost-btn" title="Se deconnecter" type="button">Deconnexion</button>
+      </div>
+    </header>
+
+    <main>
+      <section id="authView" class="auth-shell">
+        <div class="login-panel">
+          <img src="logo-sofrenor.webp" alt="Logo SOFRENOR" class="login-logo" />
+          <h2>Connexion</h2>
+          <p class="muted">Acceder au suivi digital du TRS de la ligne de production.</p>
+          <div class="segmented" role="tablist" aria-label="Mode d'authentification">
+            <button class="active" type="button" data-auth-mode="login">Se connecter</button>
+            <button type="button" data-auth-mode="register">Creer un compte</button>
+          </div>
+          <form id="authForm" class="stacked-form">
+            <label>
+              Email SOFRENOR
+              <input id="username" type="email" autocomplete="username" required placeholder="ex. production@sofrenor.ma" />
+            </label>
+            <label>
+              Mot de passe
+              <input id="password" type="password" autocomplete="current-password" required placeholder="Mot de passe" />
+            </label>
+            <label id="roleField" class="hidden">
+              Type de compte
+              <select id="role">
+                <option value="operator">Operateur</option>
+                <option value="production">Responsable production</option>
+                <option value="maintenance">Responsable maintenance</option>
+              </select>
+            </label>
+            <button class="primary-btn" type="submit">Connexion</button>
+            <p id="authMessage" class="form-message"></p>
+          </form>
+        </div>
+      </section>
+
+      <section id="appView" class="hidden app-shell">
+        <nav id="mainNav" class="main-nav" aria-label="Navigation principale">
+          <button class="active" type="button" data-view="entryView">Informations a saisir</button>
+          <button type="button" data-view="dashboardView">Tableau de bord</button>
+          <button type="button" data-view="historyView">Historique</button>
+          <button type="button" data-view="settingsView">Parametrage</button>
+        </nav>
+
+        <section id="entryView" class="view active">
+          <div class="view-heading">
+            <div>
+              <p class="eyebrow">Production</p>
+              <h2>Informations a saisir</h2>
+            </div>
+            <time id="todayDate"></time>
+          </div>
+
+          <form id="productionForm" class="production-layout">
+            <div class="form-grid">
+              <label>
+                Horaire
+                <select id="shift" required></select>
+              </label>
+              <label id="customShiftWrap" class="hidden">
+                Horaire personnalise
+                <input id="customShift" placeholder="ex. 8h-12h" />
+              </label>
+              <label>
+                Section
+                <select id="section" required></select>
+              </label>
+              <label>
+                Type de bouteilles
+                <select id="bottleType" required></select>
+              </label>
+              <label>
+                Poste
+                <select id="post" required></select>
+              </label>
+              <label>
+                Machine
+                <select id="machine" required></select>
+              </label>
+              <label>
+                Pieces produites (4h)
+                <input id="produced" type="number" min="0" step="1" required />
+              </label>
+              <label>
+                Duree de poste (h)
+                <input id="openTime" type="number" min="0.1" step="0.1" value="4" required />
+              </label>
+              <label>
+                Cadence reelle (p/h)
+                <input id="realCadence" readonly />
+              </label>
+              <label>
+                Cadence theorique (p/h)
+                <input id="nominalCadence" readonly />
+              </label>
+              <label>
+                Il y a des rebuts ?
+                <select id="hasRejects">
+                  <option value="non">Non</option>
+                  <option value="oui">Oui</option>
+                </select>
+              </label>
+              <label id="rejectsWrap" class="hidden">
+                Combien ?
+                <input id="rejects" type="number" min="0" step="1" value="0" />
+              </label>
+              <label>
+                Il y a un arret ?
+                <select id="hasStop">
+                  <option value="non">Non</option>
+                  <option value="oui">Oui</option>
+                </select>
+              </label>
+              <label id="stopDurationWrap" class="hidden">
+                Total d'arret (h / 4h)
+                <input id="stopDuration" type="number" min="0" step="0.1" value="0" />
+              </label>
+              <label id="stopFamilyWrap" class="hidden">
+                Cause principale d'arret
+                <select id="stopFamily"></select>
+              </label>
+              <label id="stopCauseWrap" class="hidden">
+                Detail de la cause
+                <select id="stopCause"></select>
+              </label>
+              <label id="customCauseWrap" class="hidden">
+                Cause autre
+                <input id="customCause" placeholder="Saisir la cause" />
+              </label>
+            </div>
+            <div class="form-actions">
+              <button class="primary-btn" type="submit">Enregistrer</button>
+              <button class="ghost-btn" type="reset">Effacer</button>
+            </div>
+          </form>
+
+          <div class="kpi-strip" id="entryKpis"></div>
+        </section>
+
+        <section id="dashboardView" class="view">
+          <div class="view-heading">
+            <div>
+              <p class="eyebrow">Pilotage temps reel</p>
+              <h2>Tableau de bord TRS</h2>
+            </div>
+            <button id="refreshDashboard" class="ghost-btn" type="button">Actualiser</button>
+          </div>
+          <div class="kpi-strip" id="dashboardKpis"></div>
+          <div class="dashboard-grid">
+            <section class="panel">
+              <h3>Criticite des machines</h3>
+              <div id="machineRanking" class="machine-list"></div>
+            </section>
+            <section class="panel pareto-panel">
+              <h3>Pareto des causes d'arret</h3>
+              <canvas id="paretoCanvas" width="760" height="360"></canvas>
+            </section>
+            <section class="panel trend-panel">
+              <h3>Evolution du TRS</h3>
+              <canvas id="trendCanvas" width="900" height="360"></canvas>
+            </section>
+          </div>
+          <div class="dashboard-actions">
+            <button id="clearEntries" class="ghost-btn danger" type="button">Supprimer les donnees saisies et recommencer</button>
+          </div>
+        </section>
+
+        <section id="historyView" class="view">
+          <div class="view-heading">
+            <div>
+              <p class="eyebrow">Donnees enregistrees</p>
+              <h2>Historique</h2>
+            </div>
+            <button id="exportCsv" class="ghost-btn" type="button">Exporter CSV</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Poste</th>
+                  <th>Machine</th>
+                  <th>Pieces</th>
+                  <th>Rebuts</th>
+                  <th>Cause</th>
+                  <th>TRS</th>
+                </tr>
+              </thead>
+              <tbody id="historyTable"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="settingsView" class="view">
+          <div class="view-heading">
+            <div>
+              <p class="eyebrow">Responsables</p>
+              <h2>Parametrage du site</h2>
+            </div>
+            <button id="resetConfig" class="ghost-btn danger" type="button">Retablir les valeurs</button>
+          </div>
+          <div class="settings-grid">
+            <section class="panel">
+              <h3>Options generales</h3>
+              <label>
+                Horaires
+                <textarea id="settingsShifts" rows="4"></textarea>
+              </label>
+              <label>
+                Types de bouteilles
+                <textarea id="settingsBottles" rows="4"></textarea>
+              </label>
+            </section>
+            <section class="panel">
+              <h3>Sections, postes et machines</h3>
+              <label>
+                Configuration JSON
+                <textarea id="settingsSections" rows="13"></textarea>
+              </label>
+            </section>
+            <section class="panel">
+              <h3>Causes d'arret</h3>
+              <label>
+                Causes JSON
+                <textarea id="settingsCauses" rows="13"></textarea>
+              </label>
+            </section>
+            <section class="panel">
+              <h3>Cadences theoriques</h3>
+              <label>
+                Cadences JSON
+                <textarea id="settingsCadences" rows="13"></textarea>
+              </label>
+            </section>
+          </div>
+          <div class="form-actions">
+            <button id="saveSettings" class="primary-btn" type="button">Enregistrer le parametrage</button>
+            <p id="settingsMessage" class="form-message"></p>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
