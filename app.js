@@ -561,36 +561,7 @@ ctx.translate(x + barWidth / 2, margin.top + height + 12);
   });
   drawLine(ctx, points, "#df8a1d", 3);
 }
-function drawTrend(entries) {
-  const canvas = el("trendCanvas");
-  const ctx = canvas.getContext("2d");
-  clearCanvas(ctx, canvas);
-  const data = entries.slice(-18).map((entry) => ({
-    label: new Date(entry.timestamp).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
-    value: entry.trs * 100
-  }));
-if (!data.length) return drawEmpty(ctx, canvas, "Aucune evolution a afficher");
-
-  const margin = { top: 25, right: 25, bottom: 55, left: 45 };
-  const width = canvas.width - margin.left - margin.right;
-  const height = canvas.height - margin.top - margin.bottom;
-  drawAxes(ctx, margin, width, height);
-  const points = data.map((item, index) => {
-    const x = margin.left + (data.length === 1 ? width / 2 : index * width / (data.length - 1));
-    const y = margin.top + height - Math.min(item.value, 120) / 120 * height;
-    return { x, y, label: item.label, value: item.value };
-  });
- drawLine(ctx, points, "#17865a", 3);
-  points.forEach((point) => {
-    ctx.fillStyle = "#17865a";
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#172033";
-    ctx.font = "12px Arial";
-    ctx.textAlign = "center";
-    ctx.fillText(point.label, point.x, margin.top + height + 24);
-  });
+function drawTrend(entries)   
 }
 function clearCanvas(ctx, canvas) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
