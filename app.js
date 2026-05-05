@@ -506,8 +506,140 @@ function renderDashboard() {
   const latest = entries.at(-1) || lastCalculated;
   renderKpis(el("dashboardKpis"), latest);
   renderMachineRanking(entries);
-  drawPareto(entries);
-  drawTrend(entries);
+  function drawPareto(entries) {
+  const canvas = el("paretoCanvas");
+  const ctx = canvas.getContext("2d");
+  clearCanvas(ctx, canvas);
+
+  const stops = entries.filter(e => e.stopCause && e.stopCause !== "Aucun arret");
+
+  const counts = {};
+  stops.forEach((entry) => {
+    const label = `${entry.stopCause}`;
+    counts[label] = (counts[label] || 0) + 1;
+  });
+
+  const data = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+
+  if (!data.length) {
+    drawEmpty(ctx, canvas, "Aucune cause d'arret");
+    return;
+  }
+
+  const margin = { top: 40, right: 60, bottom: 170, left: 70 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  drawAxes(ctx, margin, width, height);
+
+  const maxCount = Math.max(...data.map(d => d[1]));
+  const barWidth = width / data.length * 0.25;
+
+  data.forEach(([label, count], index) => {
+    const x = margin.left + index * (width / data.length) + 40;
+    const barHeight = (count / maxCount) * height;
+    const y = margin.top + height - barHeight;
+
+    // barre fine
+    ctx.fillStyle = "#0f6fb5";
+    ctx.fillRect(x, y, barWidth, barHeight);
+
+    // valeur
+    ctx.fillStyle = "#000";
+    ctx.font = "12px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(count, x + barWidth / 2, y - 8);
+
+    // texte vertical complet
+    ctx.save();
+    ctx.translate(x + barWidth / 2, margin.top + height + 10);
+    ctx.rotate(-Math.PI / 3);
+    ctx.textAlign = "right";
+    ctx.font = "11px Arial";
+    wrapText(ctx, label, 0, 0, 130, 14);
+    ctx.restore();
+  });
+
+  // Axe Y
+  ctx.fillStyle = "#000";
+  ctx.font = "14px Arial";
+  ctx.save();
+  ctx.translate(20, canvas.height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("Nombre d'arrêts", 0, 0);
+  ctx.restore();
+
+  // Axe X
+  ctx.fillText("Causes d'arrêt", canvas.width / 2, canvas.height - 20);
+}
+  function drawTrend(entries) {
+  const canvas = el("trendCanvas");
+  const ctx = canvas.getContext("2d");
+  clearCanvas(ctx, canvas);
+
+  const data = entries.slice(-18).map(entry => ({
+    label: new Date(entry.timestamp).toLocaleDateString("fr-FR"),
+    value: entry.trs * 100
+  }));
+
+  if (!data.length) {
+    drawEmpty(ctx, canvas, "Aucune evolution");
+    return;
+  }
+
+  const margin = { top: 40, right: 40, bottom: 70, left: 70 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+
+  drawAxes(ctx, margin, width, height);
+
+  // graduations Y
+  for (let i = 0; i <= 100; i += 20) {
+    const y = margin.top + height - (i / 100) * height;
+
+    ctx.fillStyle = "#666";
+    ctx.font = "12px Arial";
+    ctx.fillText(i + "%", 20, y + 4);
+
+    ctx.strokeStyle = "#eee";
+    ctx.beginPath();
+    ctx.moveTo(margin.left, y);
+    ctx.lineTo(margin.left + width, y);
+    ctx.stroke();
+  }
+
+  const points = data.map((item, index) => ({
+    x: margin.left + index * width / (data.length - 1 || 1),
+    y: margin.top + height - (item.value / 100) * height,
+    label: item.label
+  }));
+
+  drawLine(ctx, points, "#17865a", 2);
+
+  points.forEach((p) => {
+    ctx.fillStyle = "#17865a";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#000";
+    ctx.font = "11px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(p.label, p.x, canvas.height - 25);
+  });
+
+  // Axe Y
+  ctx.save();
+  ctx.translate(20, canvas.height / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText("TRS (%)", 0, 0);
+  ctx.restore();
+
+  // Axe X
+  ctx.fillText("Date", canvas.width / 2, canvas.height - 5);
+}
 }
 
 function renderMachineRanking(entries) {
@@ -628,6 +760,25 @@ function drawEmpty(ctx, canvas, message) {
 
 function shorten(text, size) {
   return text.length > size ? `${text.slice(0, size - 1)}...` : text;
+  function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(" ");
+  let line = "";
+
+  for (let n = 0; n < words.length; n++) {
+    const testLine = line + words[n] + " ";
+    const metrics = ctx.measureText(testLine);
+
+    if (metrics.width > maxWidth && n > 0) {
+      ctx.fillText(line, x, y);
+      line = words[n] + " ";
+      y += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+
+  ctx.fillText(line, x, y);
+}
 }
 
 function renderHistory() {
