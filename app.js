@@ -433,8 +433,10 @@ function calculateMetrics() {
   const realCadence = openTime > 0 ? produced / openTime : 0;
   const availability = openTime > 0 ? operatingTime / openTime : 0;
   const quality = produced > 0 ? Math.max(produced - rejects, 0) / produced : 0;
-  const performance = nominalCadence > 0 ? realCadence / nominalCadence : 0;
-  const trs = availability * quality * performance;
+  const performance = nominalCadence > 0
+  ? Math.min(realCadence / nominalCadence, 1)
+  : 0;
+ const trs = Math.min(availability * quality * performance, 1);
  return { produced, rejects, openTime, stopDuration, operatingTime, realCadence, nominalCadence, availability, quality, performance, trs };
 }
 
