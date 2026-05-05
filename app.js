@@ -594,30 +594,7 @@ function drawEmpty(ctx, canvas, message) {
   ctx.textAlign = "center";
   ctx.fillText(message, canvas.width / 2, canvas.height / 2);
 }
-
-function shorten(text, size) {
-  return text.length > size ? `${text.slice(0, size - 1)}...` : text;
-  function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(" ");
-  let line = "";
-
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line + words[n] + " ";
-    const metrics = ctx.measureText(testLine);
-
-    if (metrics.width > maxWidth && n > 0) {
-      ctx.fillText(line, x, y);
-      line = words[n] + " ";
-      y += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-
-  ctx.fillText(line, x, y);
-}
-}
-
+function shorten(text, size) 
 function renderHistory() {
 const entries = getEntries().slice().reverse();
   el("historyTable").innerHTML = entries.length ? entries.map((entry) => `
