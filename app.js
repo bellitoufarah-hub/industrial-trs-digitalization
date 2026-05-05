@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindProductionForm();
   bindSettings();
   updateClock();
-  setInterval(updateClock, 1000);
+setInterval(updateClock, 1000);
   renderAuthState();
 });
 
@@ -135,7 +135,6 @@ function getJSON(key, fallback) {
     return fallback;
   }
 }
-
 function setJSON(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
@@ -147,9 +146,10 @@ function loadConfig() {
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
+}
 
 function makeId() {
-  if (window.crypto?.randomUUID) {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
     return window.crypto.randomUUID();
   }
   return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -158,39 +158,23 @@ function makeId() {
 function saveConfig() {
   setJSON(STORAGE_KEYS.config, config);
 }
-
 function ensureDemoUsers() {
   const users = getJSON(STORAGE_KEYS.users, []);
-
   const seed = [
     { username: "operateur@sofrenor.ma", password: "1234", role: "operator" },
     { username: "production@sofrenor.ma", password: "1234", role: "production" },
     { username: "maintenance@sofrenor.ma", password: "1234", role: "maintenance" }
   ];
-
   seed.forEach((demo) => {
-    if (!users.some((u) => u.username === demo.username)) {
-      users.push(demo);
-    }
+    if (!users.some((user) => user.username === demo.username)) users.push(demo);
   });
-
   setJSON(STORAGE_KEYS.users, users);
+}
 }
 
 function isSofrenorEmail(value) {
   return /^[^\s@]+@sofrenor\.ma$/i.test(value);
 }
-
-function startSession(user) {
-  session = {
-    username: user.username,
-    role: user.role
-  };
-
-  setJSON(STORAGE_KEYS.session, session);
-  renderAuthState();
-}
-
 function bindAuth() {
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -212,14 +196,16 @@ function bindAuth() {
     const password = el("password").value;
     const users = getJSON(STORAGE_KEYS.users, []);
 
+    // validation email
     if (!isSofrenorEmail(username)) {
-      el("authMessage").textContent = "Utilise un email @sofrenor.ma";
+      el("authMessage").textContent = "Veuillez utiliser un email @sofrenor.ma";
       return;
     }
 
+    // REGISTER
     if (authMode === "register") {
       if (users.some((u) => u.username === username)) {
-        el("authMessage").textContent = "Utilisateur existe déjà";
+        el("authMessage").textContent = "Utilisateur existe déjà.";
         return;
       }
 
@@ -236,12 +222,13 @@ function bindAuth() {
       return;
     }
 
+    // LOGIN
     const user = users.find(
       (u) => u.username === username && u.password === password
     );
 
     if (!user) {
-      el("authMessage").textContent = "Identifiants incorrects";
+      el("authMessage").textContent = "Identifiants incorrects.";
       return;
     }
 
@@ -255,32 +242,11 @@ function bindAuth() {
   });
 }
 
-function renderAuthState() {
-  if (!session) {
-    el("authView").classList.remove("hidden");
-    el("appView").classList.add("hidden");
-    el("sessionBox").classList.add("hidden");
-    return;
-  }
 
-  el("authView").classList.add("hidden");
-  el("appView").classList.remove("hidden");
-  el("sessionBox").classList.remove("hidden");
 
-  const roleLabel = {
-    operator: "Operateur",
-    production: "Responsable production",
-    maintenance: "Responsable maintenance"
-  }[session.role];
 
-  el("currentUser").textContent =
-    `${session.username} - ${roleLabel}`;
 
-  showView("entryView");
-  populateFormOptions();
-  renderSettings();
-  renderAll();
-}
+
 
 function renderAuthState() {
   if (session && !isSofrenorEmail(session.username)) {
@@ -301,6 +267,16 @@ el("authView").classList.toggle("hidden", isLoggedIn);
   el("currentUser").textContent = `${session.username} - ${roleLabel}`;
 
   const isOperator = session.role === "operator";
+
+
+
+
+
+
+
+
+
+
 document.querySelectorAll("#mainNav button").forEach((button) => {
     const allowed = !isOperator || button.dataset.view === "entryView";
     button.classList.toggle("hidden", !allowed);
@@ -433,10 +409,8 @@ function calculateMetrics() {
   const realCadence = openTime > 0 ? produced / openTime : 0;
   const availability = openTime > 0 ? operatingTime / openTime : 0;
   const quality = produced > 0 ? Math.max(produced - rejects, 0) / produced : 0;
-  const performance = nominalCadence > 0
-  ? Math.min(realCadence / nominalCadence, 1)
-  : 0;
- const trs = Math.min(availability * quality * performance, 1);
+  const performance = nominalCadence > 0 ? realCadence / nominalCadence : 0;
+  const trs = availability * quality * performance;
  return { produced, rejects, openTime, stopDuration, operatingTime, realCadence, nominalCadence, availability, quality, performance, trs };
 }
 
@@ -506,8 +480,10 @@ function renderDashboard() {
   const latest = entries.at(-1) || lastCalculated;
   renderKpis(el("dashboardKpis"), latest);
   renderMachineRanking(entries);
-  function drawPareto(entries) 
-  }
+  drawPareto(entries);
+  drawTrend(entries);
+}
+
 function renderMachineRanking(entries) {
   const byMachine = {};
   entries.forEach((entry) => {
@@ -561,7 +537,36 @@ ctx.translate(x + barWidth / 2, margin.top + height + 12);
   });
   drawLine(ctx, points, "#df8a1d", 3);
 }
-function drawTrend(entries)   
+function drawTrend(entries) {
+  const canvas = el("trendCanvas");
+  const ctx = canvas.getContext("2d");
+  clearCanvas(ctx, canvas);
+  const data = entries.slice(-18).map((entry) => ({
+    label: new Date(entry.timestamp).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
+    value: entry.trs * 100
+  }));
+if (!data.length) return drawEmpty(ctx, canvas, "Aucune evolution a afficher");
+
+  const margin = { top: 25, right: 25, bottom: 55, left: 45 };
+  const width = canvas.width - margin.left - margin.right;
+  const height = canvas.height - margin.top - margin.bottom;
+  drawAxes(ctx, margin, width, height);
+  const points = data.map((item, index) => {
+    const x = margin.left + (data.length === 1 ? width / 2 : index * width / (data.length - 1));
+    const y = margin.top + height - Math.min(item.value, 120) / 120 * height;
+    return { x, y, label: item.label, value: item.value };
+  });
+ drawLine(ctx, points, "#17865a", 3);
+  points.forEach((point) => {
+    ctx.fillStyle = "#17865a";
+    ctx.beginPath();
+    ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#172033";
+    ctx.font = "12px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(point.label, point.x, margin.top + height + 24);
+  });
 }
 function clearCanvas(ctx, canvas) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -594,7 +599,11 @@ function drawEmpty(ctx, canvas, message) {
   ctx.textAlign = "center";
   ctx.fillText(message, canvas.width / 2, canvas.height / 2);
 }
-function shorten(text, size) 
+
+function shorten(text, size) {
+  return text.length > size ? `${text.slice(0, size - 1)}...` : text;
+}
+
 function renderHistory() {
 const entries = getEntries().slice().reverse();
   el("historyTable").innerHTML = entries.length ? entries.map((entry) => `
@@ -681,3 +690,4 @@ function updateClock() {
     day: "numeric"
   });
 }
+
