@@ -1,4 +1,4 @@
-const STORAGE_KEYS = {
+VOILA LE CODE ACTUEL "" const STORAGE_KEYS = {
   users: "sofrenor_users",
   session: "sofrenor_session",
   entries: "sofrenor_entries",
@@ -158,6 +158,7 @@ function makeId() {
 function saveConfig() {
   setJSON(STORAGE_KEYS.config, config);
 }
+
 function ensureDemoUsers() {
   const users = [
     { username: "operateur@sofrenor.ma", password: "operateur1234", role: "operator" },
@@ -166,7 +167,7 @@ function ensureDemoUsers() {
   ];
 
   localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-} 
+}
   seed.forEach((demo) => {
     if (!users.some((u) => u.username === demo.username)) {
       users.push(demo);
@@ -711,8 +712,7 @@ function updateClock() {
     weekday: "long",
     year: "numeric",
     month: "long",
-    day: "numeric"
-  });
+    day: "numeric" });
 }
 
 
