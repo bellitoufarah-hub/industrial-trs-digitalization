@@ -109,6 +109,7 @@ const defaultConfig = {
     "Machine": ["Deterioration cables par vibrations et echauffement", "Desserrage contacts et connecteurs sous vibrations", "Derive capteur fin de course", "Surchauffe moteur", "Autre"]
   }
 };
+
 let config = loadConfig();
 let authMode = "login";
 let session = getJSON(STORAGE_KEYS.session, null);
@@ -160,14 +161,14 @@ function saveConfig() {
 }
 
 function ensureDemoUsers() {
-  const users = [
-    { username: "operateur@sofrenor.ma", password: "operateur1234", role: "operator" },
-    { username: "production@sofrenor.ma", password: "production1234", role: "production" },
-    { username: "maintenance@sofrenor.ma", password: "maintenance1234", role: "maintenance" }
+  const users = getJSON(STORAGE_KEYS.users, []);
+
+  const seed = [
+    { username: "operateur@sofrenor.ma", password: "sofrenor1234", role: "operator" },
+    { username: "production@sofrenor.ma", password: "sofrenor1234", role: "production" },
+    { username: "maintenance@sofrenor.ma", password: "sofrenor1234", role: "maintenance" }
   ];
 
-  localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-}
   seed.forEach((demo) => {
     if (!users.some((u) => u.username === demo.username)) {
       users.push(demo);
@@ -281,6 +282,7 @@ function renderAuthState() {
   renderSettings();
   renderAll();
 }
+
 function renderAuthState() {
   if (session && !isSofrenorEmail(session.username)) {
     session = null;
