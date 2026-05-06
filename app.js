@@ -254,35 +254,7 @@ function bindAuth() {
     localStorage.removeItem(STORAGE_KEYS.session);
     renderAuthState();
   });
-}
-
-function renderAuthState() {
-  if (!session) {
-    el("authView").classList.remove("hidden");
-    el("appView").classList.add("hidden");
-    el("sessionBox").classList.add("hidden");
-    return;
-  }
-
-  el("authView").classList.add("hidden");
-  el("appView").classList.remove("hidden");
-  el("sessionBox").classList.remove("hidden");
-
-  const roleLabel = {
-    operator: "Operateur",
-    production: "Responsable production",
-    maintenance: "Responsable maintenance"
-  }[session.role];
-
-  el("currentUser").textContent =
-    `${session.username} - ${roleLabel}`;
-
-  showView("entryView");
-  populateFormOptions();
-  renderSettings();
-  renderAll();
-}
-
+  
 function renderAuthState() {
   if (session && !isSofrenorEmail(session.username)) {
     session = null;
