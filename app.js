@@ -530,8 +530,10 @@ function drawPareto(entries) {
   const counts = {};
   stops.forEach((entry) => counts[entry.stopCause] = (counts[entry.stopCause] || 0) + 1);
   const data = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
-  if (!data.length) return drawEmpty(ctx, canvas, "Aucune cause d'arret a afficher");
-
+ if (!data.length) {
+  console.log("No stop data");
+  return drawEmpty(ctx, canvas, "Aucune cause d'arret");
+}
   const margin = { top: 25, right: 45, bottom: 82, left: 45 };
 const width = canvas.width - margin.left - margin.right;
   const height = canvas.height - margin.top - margin.bottom;
@@ -576,7 +578,7 @@ if (!data.length) return drawEmpty(ctx, canvas, "Aucune evolution a afficher");
   drawAxes(ctx, margin, width, height);
   const points = data.map((item, index) => {
     const x = margin.left + (data.length === 1 ? width / 2 : index * width / (data.length - 1));
-    const y = margin.top + height - Math.min(item.value, 120) / 120 * height;
+    const y = margin.top + height - (item.value / 100) * height;
     return { x, y, label: item.label, value: item.value };
   });
  drawLine(ctx, points, "#17865a", 3);
