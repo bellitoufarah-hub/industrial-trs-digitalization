@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
   bindProductionForm();
   bindSettings();
   updateClock();
-setInterval(updateClock, 1000);
+  setInterval(updateClock, 1000);
   renderAuthState();
 });
 
@@ -135,6 +135,7 @@ function getJSON(key, fallback) {
     return fallback;
   }
 }
+
 function setJSON(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
@@ -146,10 +147,9 @@ function loadConfig() {
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
-}
 
 function makeId() {
-  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+  if (window.crypto?.randomUUID) {
     return window.crypto.randomUUID();
   }
   return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -158,23 +158,39 @@ function makeId() {
 function saveConfig() {
   setJSON(STORAGE_KEYS.config, config);
 }
+
 function ensureDemoUsers() {
   const users = getJSON(STORAGE_KEYS.users, []);
+
   const seed = [
     { username: "operateur@sofrenor.ma", password: "1234", role: "operator" },
     { username: "production@sofrenor.ma", password: "1234", role: "production" },
     { username: "maintenance@sofrenor.ma", password: "1234", role: "maintenance" }
   ];
+
   seed.forEach((demo) => {
-    if (!users.some((user) => user.username === demo.username)) users.push(demo);
+    if (!users.some((u) => u.username === demo.username)) {
+      users.push(demo);
+    }
   });
+
   setJSON(STORAGE_KEYS.users, users);
-}
 }
 
 function isSofrenorEmail(value) {
   return /^[^\s@]+@sofrenor\.ma$/i.test(value);
 }
+
+function startSession(user) {
+  session = {
+    username: user.username,
+    role: user.role
+  };
+
+  setJSON(STORAGE_KEYS.session, session);
+  renderAuthState();
+}
+
 function bindAuth() {
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -196,16 +212,14 @@ function bindAuth() {
     const password = el("password").value;
     const users = getJSON(STORAGE_KEYS.users, []);
 
-    // validation email
     if (!isSofrenorEmail(username)) {
-      el("authMessage").textContent = "Veuillez utiliser un email @sofrenor.ma";
+      el("authMessage").textContent = "Utilise un email @sofrenor.ma";
       return;
     }
 
-    // REGISTER
     if (authMode === "register") {
       if (users.some((u) => u.username === username)) {
-        el("authMessage").textContent = "Utilisateur existe déjà.";
+        el("authMessage").textContent = "Utilisateur existe déjà";
         return;
       }
 
@@ -222,13 +236,12 @@ function bindAuth() {
       return;
     }
 
-    // LOGIN
     const user = users.find(
       (u) => u.username === username && u.password === password
     );
 
     if (!user) {
-      el("authMessage").textContent = "Identifiants incorrects.";
+      el("authMessage").textContent = "Identifiants incorrects";
       return;
     }
 
@@ -242,12 +255,32 @@ function bindAuth() {
   });
 }
 
+function renderAuthState() {
+  if (!session) {
+    el("authView").classList.remove("hidden");
+    el("appView").classList.add("hidden");
+    el("sessionBox").classList.add("hidden");
+    return;
+  }
 
+  el("authView").classList.add("hidden");
+  el("appView").classList.remove("hidden");
+  el("sessionBox").classList.remove("hidden");
 
+  const roleLabel = {
+    operator: "Operateur",
+    production: "Responsable production",
+    maintenance: "Responsable maintenance"
+  }[session.role];
 
+  el("currentUser").textContent =
+    `${session.username} - ${roleLabel}`;
 
-
-
+  showView("entryView");
+  populateFormOptions();
+  renderSettings();
+  renderAll();
+}
 function renderAuthState() {
   if (session && !isSofrenorEmail(session.username)) {
     session = null;
@@ -267,16 +300,6 @@ el("authView").classList.toggle("hidden", isLoggedIn);
   el("currentUser").textContent = `${session.username} - ${roleLabel}`;
 
   const isOperator = session.role === "operator";
-
-
-
-
-
-
-
-
-
-
 document.querySelectorAll("#mainNav button").forEach((button) => {
     const allowed = !isOperator || button.dataset.view === "entryView";
     button.classList.toggle("hidden", !allowed);
@@ -329,7 +352,6 @@ el("productionForm").addEventListener("submit", (event) => {
     });
   });
 }
-
 function populateFormOptions() {
   fillSelect(el("shift"), config.shifts);
   fillSelect(el("section"), Object.keys(config.sections));
@@ -353,7 +375,6 @@ function populateStopFamilies() {
   fillSelect(el("stopFamily"), Object.keys(config.stopCauses));
   populateStopCauses();
 }
-
 function populateStopCauses() {
   fillSelect(el("stopCause"), config.stopCauses[el("stopFamily").value] || []);
 }
@@ -409,8 +430,10 @@ function calculateMetrics() {
   const realCadence = openTime > 0 ? produced / openTime : 0;
   const availability = openTime > 0 ? operatingTime / openTime : 0;
   const quality = produced > 0 ? Math.max(produced - rejects, 0) / produced : 0;
-  const performance = nominalCadence > 0 ? realCadence / nominalCadence : 0;
-  const trs = availability * quality * performance;
+  const performance = nominalCadence > 0
+  ? Math.min(realCadence / nominalCadence, 1)
+  : 0;
+ const trs = Math.min(availability * quality * performance, 1);
  return { produced, rejects, openTime, stopDuration, operatingTime, realCadence, nominalCadence, availability, quality, performance, trs };
 }
 
@@ -690,4 +713,5 @@ function updateClock() {
     day: "numeric"
   });
 }
+
 
