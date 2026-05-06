@@ -160,14 +160,14 @@ function saveConfig() {
 }
 
 function ensureDemoUsers() {
-  const users = getJSON(STORAGE_KEYS.users, []);
+  const users = [
+    { username: "operateur@sofrenor.ma", password: "operateur1234", role: "operator" },
+    { username: "production@sofrenor.ma", password: "production1234", role: "production" },
+    { username: "maintenance@sofrenor.ma", password: "maintenance1234", role: "maintenance" }
+  ];
 
- const seed = [
-  { username: "operateur@sofrenor.ma", password: "operateur1234", role: "operator" },
-  { username: "production@sofrenor.ma", password: "production1234", role: "production" },
-  { username: "maintenance@sofrenor.ma", password: "maintenance1234", role: "maintenance" }
-];
-
+  localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
+}
   seed.forEach((demo) => {
     if (!users.some((u) => u.username === demo.username)) {
       users.push(demo);
