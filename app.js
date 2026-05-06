@@ -158,28 +158,15 @@ function makeId() {
 function saveConfig() {
   setJSON(STORAGE_KEYS.config, config);
 }
-
 function ensureDemoUsers() {
-  const existing = getJSON(STORAGE_KEYS.users, []);
-
-  const seed = [
+  const users = [
     { username: "operateur@sofrenor.ma", password: "operateur1234", role: "operator" },
     { username: "production@sofrenor.ma", password: "production1234", role: "production" },
     { username: "maintenance@sofrenor.ma", password: "maintenance1234", role: "maintenance" }
   ];
 
-  seed.forEach((newUser) => {
-    const index = existing.findIndex(u => u.username === newUser.username);
-
-    if (index >= 0) {
-      existing[index] = newUser; // update password
-    } else {
-      existing.push(newUser); // add new user
-    }
-  });
-
-  setJSON(STORAGE_KEYS.users, existing);
-}
+  localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
+} 
   seed.forEach((demo) => {
     if (!users.some((u) => u.username === demo.username)) {
       users.push(demo);
