@@ -252,7 +252,6 @@ function bindAuth() {
   el("logoutBtn").addEventListener("click", () => {
     session = null;
     localStorage.removeItem(STORAGE_KEYS.session);
-    renderAuthState();
   });
   }
 function renderAuthState() {
