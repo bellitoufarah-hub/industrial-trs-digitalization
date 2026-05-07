@@ -254,7 +254,7 @@ function bindAuth() {
     localStorage.removeItem(STORAGE_KEYS.session);
     renderAuthState();
   });
-  
+  }
 function renderAuthState() {
   if (session && !isSofrenorEmail(session.username)) {
     session = null;
