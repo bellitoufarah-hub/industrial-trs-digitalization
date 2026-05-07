@@ -181,6 +181,7 @@ function ensureDemoUsers() {
 function isSofrenorEmail(value) {
   return /^[^\s@]+@sofrenor\.ma$/i.test(value);
 }
+let session = getJSON(STORAGE_KEYS.session, null);
 
 function startSession(user) {
   session = {
@@ -192,42 +193,48 @@ function startSession(user) {
   renderAuthState();
 }
 
+function clearSession() {
+  session = null;
+  localStorage.removeItem(STORAGE_KEYS.session);
+  renderAuthState();
+}
 function bindAuth() {
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
     button.addEventListener("click", () => {
       authMode = button.dataset.authMode;
 
-      document.querySelectorAll("[data-auth-mode]").forEach((item) =>
-        item.classList.toggle("active", item === button)
-      );
+      document.querySelectorAll("[data-auth-mode]").forEach((item) => {
+        item.classList.toggle("active", item === button);
+      });
 
-      el("roleField").classList.toggle("hidden", authMode !== "register");
-      el("authMessage").textContent = "";
+      safeEl("roleField")?.classList.toggle("hidden", authMode !== "register");
+      safeEl("authMessage").textContent = "";
     });
   });
 
-  el("authForm").addEventListener("submit", (event) => {
+  safeEl("authForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
 
-    const username = el("username").value.trim().toLowerCase();
-    const password = el("password").value;
+    const username = safeEl("username").value.trim().toLowerCase();
+    const password = safeEl("password").value;
     const users = getJSON(STORAGE_KEYS.users, []);
 
-    if (!isSofrenorEmail(username)) {
-      el("authMessage").textContent = "Utilise un email @sofrenor.ma";
+    if (!/^[^\s@]+@sofrenor\.ma$/i.test(username)) {
+      safeEl("authMessage").textContent = "Email doit être @sofrenor.ma";
       return;
     }
 
+    // REGISTER
     if (authMode === "register") {
-      if (users.some((u) => u.username === username)) {
-        el("authMessage").textContent = "Utilisateur existe déjà";
+      if (users.some(u => u.username === username)) {
+        safeEl("authMessage").textContent = "Utilisateur existe déjà";
         return;
       }
 
       const newUser = {
         username,
         password,
-        role: el("role").value
+        role: safeEl("role").value
       };
 
       users.push(newUser);
@@ -237,93 +244,59 @@ function bindAuth() {
       return;
     }
 
+    // LOGIN
     const user = users.find(
-      (u) => u.username === username && u.password === password
+      u => u.username === username && u.password === password
     );
 
     if (!user) {
-      el("authMessage").textContent = "Identifiants incorrects";
+      safeEl("authMessage").textContent = "Identifiants incorrects";
       return;
     }
 
     startSession(user);
   });
 
-  el("logoutBtn").addEventListener("click", () => {
-    session = null;
-    localStorage.removeItem(STORAGE_KEYS.session);
-  });
-  }
+  safeEl("logoutBtn")?.addEventListener("click", clearSession);
+}
 function renderAuthState() {
-  if (session && !isSofrenorEmail(session.username)) {
-    session = null;
-    localStorage.removeItem(STORAGE_KEYS.session);
+  const authView = safeEl("authView");
+  const appView = safeEl("appView");
+  const sessionBox = safeEl("sessionBox");
+
+  if (!session) {
+    authView?.classList.remove("hidden");
+    appView?.classList.add("hidden");
+    sessionBox?.classList.add("hidden");
+    return;
   }
-  const isLoggedIn = Boolean(session);
-el("authView").classList.toggle("hidden", isLoggedIn);
-  el("appView").classList.toggle("hidden", !isLoggedIn);
-  el("sessionBox").classList.toggle("hidden", !isLoggedIn);
-  if (!isLoggedIn) return;
+
+  authView?.classList.add("hidden");
+  appView?.classList.remove("hidden");
+  sessionBox?.classList.remove("hidden");
 
   const roleLabel = {
-    operator: "Operateur",
+    operator: "Opérateur",
     production: "Responsable production",
     maintenance: "Responsable maintenance"
-  }[session.role];
-  el("currentUser").textContent = `${session.username} - ${roleLabel}`;
+  }[session.role] || "Utilisateur";
+
+  const currentUser = safeEl("currentUser");
+  if (currentUser) {
+    currentUser.textContent = `${session.username} - ${roleLabel}`;
+  }
 
   const isOperator = session.role === "operator";
-document.querySelectorAll("#mainNav button").forEach((button) => {
+
+  document.querySelectorAll("#mainNav button").forEach((button) => {
     const allowed = !isOperator || button.dataset.view === "entryView";
     button.classList.toggle("hidden", !allowed);
   });
-  showView("entryView");
-  populateFormOptions();
-  renderSettings();
-  renderAll();
-}
-function bindNavigation() {
-  document.querySelectorAll("#mainNav button").forEach((button) => {
-    button.addEventListener("click", () => showView(button.dataset.view));
-  });
-  el("refreshDashboard").addEventListener("click", renderDashboard);
-  el("exportCsv").addEventListener("click", exportCsv);
-  el("clearEntries").addEventListener("click", clearEntries);
-}
-function showView(viewId) {
-  document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
-  document.querySelectorAll("#mainNav button").forEach((button) => button.classList.toggle("active", button.dataset.view === viewId));
-  if (viewId === "dashboardView") renderDashboard();
-  if (viewId === "historyView") renderHistory();
-}
-function bindProductionForm() {
-  ["shift", "section", "post", "machine", "produced", "openTime", "hasRejects", "rejects", "hasStop", "stopDuration", "stopFamily", "stopCause", "customCause"].forEach((id) => {
-    el(id).addEventListener("input", handleFormChange);
-    el(id).addEventListener("change", handleFormChange);
-  });
-el("productionForm").addEventListener("submit", (event) => {
-    event.preventDefault();
-    const metrics = calculateMetrics();
-    const entry = collectEntry(metrics);
-    const entries = getJSON(STORAGE_KEYS.entries, []);
-    entries.push(entry);
-    setJSON(STORAGE_KEYS.entries, entries);
-    lastCalculated = metrics;
-    renderKpis(el("entryKpis"), metrics);
-    renderAll();
-    el("productionForm").reset();
-    el("openTime").value = 4;
-    populateFormOptions();
-    handleFormChange();
-});
 
-  el("productionForm").addEventListener("reset", () => {
-    setTimeout(() => {
-      el("openTime").value = 4;
-      populateFormOptions();
-      handleFormChange();
-    });
-  });
+  showView("entryView");
+  populateFormOptions?.();
+  renderSettings?.();
+  renderAll?.();
 }
 function populateFormOptions() {
   fillSelect(el("shift"), config.shifts);
