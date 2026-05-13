@@ -141,7 +141,19 @@ function setJSON(key, value) {
 }
 
 function loadConfig() {
-  return getJSON(STORAGE_KEYS.config, clone(defaultConfig));
+  const saved = getJSON(STORAGE_KEYS.config, null);
+
+  if (!saved || typeof saved !== "object") {
+    return clone(defaultConfig);
+  }
+
+  return {
+    shifts: saved.shifts || defaultConfig.shifts,
+    bottles: saved.bottles || defaultConfig.bottles,
+    sections: saved.sections || defaultConfig.sections,
+    stopCauses: saved.stopCauses || defaultConfig.stopCauses,
+    cadences: saved.cadences || defaultConfig.cadences
+  };
 }
 
 function clone(value) {
@@ -608,13 +620,15 @@ const entries = getEntries().slice().reverse();
 function bindSettings() {
   el("saveSettings").addEventListener("click", () => {
     try {
-      config = {
-        shifts: linesToArray(el("settingsShifts").value),
-        bottles: linesToArray(el("settingsBottles").value),
-        sections: JSON.parse(el("settingsSections").value),
-        stopCauses: JSON.parse(el("settingsCauses").value),
-        cadences: JSON.parse(el("settingsCadences").value)
-      };
+      const newConfig = {
+  shifts: linesToArray(el("settingsShifts").value),
+  bottles: linesToArray(el("settingsBottles").value),
+  sections: safeJSON(el("settingsSections").value, config.sections),
+  stopCauses: safeJSON(el("settingsCauses").value, config.stopCauses),
+  cadences: safeJSON(el("settingsCadences").value, config.cadences)
+};
+
+config = newConfig;
 saveConfig();
       populateFormOptions();
       el("settingsMessage").textContent = "Parametrage enregistre.";
