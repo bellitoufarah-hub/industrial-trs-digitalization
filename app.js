@@ -127,8 +127,6 @@ document.addEventListener("DOMContentLoaded", () => {
   renderAuthState();
 });
 
-const el = (id) => document.getElementById(id);
-
 function getJSON(key, fallback) {
   try {
     const value = localStorage.getItem(key);
@@ -211,7 +209,6 @@ function startSession(user) {
   console.log("SESSION SAVED:", sessionData);
 
   renderAuthState();
-};
 }
 function clearSession() {
   session = null;
@@ -336,7 +333,7 @@ function renderAuthState() {
 }
 function populateFormOptions() {
   fillSelect(el("shift"), config.shifts);
-  fillSelect(el("section"), Object.keys(config.sections));
+  fillSelect(el("section"), Object.keys(config.sections || {}));
   fillSelect(el("bottleType"), config.bottles);
   populatePosts();
   populateStopFamilies();
