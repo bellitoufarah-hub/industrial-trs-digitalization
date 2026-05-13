@@ -127,6 +127,8 @@ document.addEventListener("DOMContentLoaded", () => {
   renderAuthState();
 });
 
+const el = (id) => document.getElementById(id);
+
 function getJSON(key, fallback) {
   try {
     const value = localStorage.getItem(key);
@@ -139,7 +141,13 @@ function getJSON(key, fallback) {
 function setJSON(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
-
+function safeJSON(value, fallback) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
 function loadConfig() {
   const saved = getJSON(STORAGE_KEYS.config, null);
 
@@ -333,6 +341,7 @@ function populateFormOptions() {
   populatePosts();
   populateStopFamilies();
   handleFormChange();
+  console.log("CONFIG SECTIONS:", config.sections);
 }
 function populatePosts() {
   const section = el("section").value || Object.keys(config.sections)[0];
