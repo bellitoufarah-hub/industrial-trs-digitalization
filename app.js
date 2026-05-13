@@ -112,7 +112,6 @@ const defaultConfig = {
 
 let config = loadConfig();
 let authMode = "login";
-let session = getJSON(STORAGE_KEYS.session, null);
 let lastCalculated = emptyMetrics();
 
 const el = (id) => document.getElementById(id);
@@ -181,13 +180,18 @@ function isSofrenorEmail(value) {
   return /^[^\s@]+@sofrenor\.ma$/i.test(value);
 }
 function startSession(user) {
-  session = user;
 
-  setJSON(STORAGE_KEYS.session, user);
+  const sessionData = {
+    username: user.username,
+    role: user.role
+  };
 
-  console.log("SESSION CREATED:", session);
+  localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(sessionData));
+
+  console.log("SESSION SAVED:", sessionData);
 
   renderAuthState();
+};
 }
 function clearSession() {
   session = null;
@@ -300,19 +304,12 @@ function renderAuthState() {
   appView?.classList.remove("hidden");
   sessionBox?.classList.remove("hidden");
 
-  const roleLabel = {
-    operator: "Opérateur",
-    production: "Responsable production",
-    maintenance: "Responsable maintenance"
-  }[session.role] || "Utilisateur";
-
   const currentUser = el("currentUser");
   if (currentUser) {
-    currentUser.textContent = `${session.username} - ${roleLabel}`;
+    currentUser.textContent = `${session.username} - ${session.role}`;
   }
 
   showView("entryView");
-
   populateFormOptions?.();
   renderSettings?.();
   renderAll?.();
@@ -409,7 +406,7 @@ function collectEntry(metrics) {
   return {
     id: makeId(),
     timestamp: new Date().toISOString(),
-    user: session.username,
+    user: getJSON(STORAGE_KEYS.session, {}).username,
  shift: el("shift").value === "Autre" ? el("customShift").value.trim() || "Autre" : el("shift").value,
     section: el("section").value,
     bottleType: el("bottleType").value,
