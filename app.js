@@ -176,13 +176,15 @@ function ensureDemoUsers() {
   });
 
   setJSON(STORAGE_KEYS.users, users);
-}
 
+
+
+
+  
+}
 function isSofrenorEmail(value) {
   return /^[^\s@]+@sofrenor\.ma$/i.test(value);
 }
-let session = getJSON(STORAGE_KEYS.session, null);
-
 function startSession(user) {
   session = {
     username: user.username,
