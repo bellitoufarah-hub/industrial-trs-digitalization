@@ -175,26 +175,20 @@ function ensureDemoUsers() {
     }
   });
 
-  setJSON(STORAGE_KEYS.users, users);
-
-
-
-
-  
+  setJSON(STORAGE_KEYS.users, users);  
 }
 function isSofrenorEmail(value) {
   return /^[^\s@]+@sofrenor\.ma$/i.test(value);
 }
 function startSession(user) {
-  session = {
-    username: user.username,
-    role: user.role
-  };
+  session = user;
 
-  setJSON(STORAGE_KEYS.session, session);
+  setJSON(STORAGE_KEYS.session, user);
+
+  console.log("SESSION CREATED:", session);
+
   renderAuthState();
 }
-
 function clearSession() {
   session = null;
   localStorage.removeItem(STORAGE_KEYS.session);
@@ -286,9 +280,14 @@ function bindAuth() {
 
 }                                                      
 function renderAuthState() {
-  const authView = safeEl("authView");
-  const appView = safeEl("appView");
-  const sessionBox = safeEl("sessionBox");
+
+  session = getJSON(STORAGE_KEYS.session, null);
+
+  console.log("SESSION CHECK:", session);
+
+  const authView = el("authView");
+  const appView = el("appView");
+  const sessionBox = el("sessionBox");
 
   if (!session) {
     authView?.classList.remove("hidden");
@@ -300,6 +299,8 @@ function renderAuthState() {
   authView?.classList.add("hidden");
   appView?.classList.remove("hidden");
   sessionBox?.classList.remove("hidden");
+
+}
 
   const roleLabel = {
     operator: "Opérateur",
