@@ -281,7 +281,7 @@ function bindAuth() {
 }                                                      
 function renderAuthState() {
 
-  session = getJSON(STORAGE_KEYS.session, null);
+  const session = getJSON(STORAGE_KEYS.session, null);
 
   console.log("SESSION CHECK:", session);
 
@@ -300,27 +300,19 @@ function renderAuthState() {
   appView?.classList.remove("hidden");
   sessionBox?.classList.remove("hidden");
 
-}
-
   const roleLabel = {
     operator: "Opérateur",
     production: "Responsable production",
     maintenance: "Responsable maintenance"
   }[session.role] || "Utilisateur";
 
-  const currentUser = safeEl("currentUser");
+  const currentUser = el("currentUser");
   if (currentUser) {
     currentUser.textContent = `${session.username} - ${roleLabel}`;
   }
 
-  const isOperator = session.role === "operator";
-
-  document.querySelectorAll("#mainNav button").forEach((button) => {
-    const allowed = !isOperator || button.dataset.view === "entryView";
-    button.classList.toggle("hidden", !allowed);
-  });
-
   showView("entryView");
+
   populateFormOptions?.();
   renderSettings?.();
   renderAll?.();
