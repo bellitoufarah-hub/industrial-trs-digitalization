@@ -109,9 +109,9 @@ const defaultConfig = {
     "Machine": ["Deterioration cables par vibrations et echauffement", "Desserrage contacts et connecteurs sous vibrations", "Derive capteur fin de course", "Surchauffe moteur", "Autre"]
   }
 };
-
 let config = loadConfig();
 let authMode = "login";
+let session = getJSON(STORAGE_KEYS.session, null);
 let lastCalculated = emptyMetrics();
 
 const el = (id) => document.getElementById(id);
@@ -139,27 +139,9 @@ function getJSON(key, fallback) {
 function setJSON(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
-function safeJSON(value, fallback) {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return fallback;
-  }
-}
+
 function loadConfig() {
-  const saved = getJSON(STORAGE_KEYS.config, null);
-
-  if (!saved || typeof saved !== "object") {
-    return clone(defaultConfig);
-  }
-
-  return {
-    shifts: saved.shifts || defaultConfig.shifts,
-    bottles: saved.bottles || defaultConfig.bottles,
-    sections: saved.sections || defaultConfig.sections,
-    stopCauses: saved.stopCauses || defaultConfig.stopCauses,
-    cadences: saved.cadences || defaultConfig.cadences
-  };
+  return getJSON(STORAGE_KEYS.config, clone(defaultConfig));
 }
 
 function clone(value) {
@@ -181,9 +163,9 @@ function ensureDemoUsers() {
   const users = getJSON(STORAGE_KEYS.users, []);
 
   const seed = [
-    { username: "operateur@sofrenor.ma", password: "sofrenor1234", role: "operator" },
-    { username: "production@sofrenor.ma", password: "sofrenor1234", role: "production" },
-    { username: "maintenance@sofrenor.ma", password: "sofrenor1234", role: "maintenance" }
+    { username: "operateur@sofrenor.ma", password: "1234", role: "operator" },
+    { username: "production@sofrenor.ma", password: "1234", role: "production" },
+    { username: "maintenance@sofrenor.ma", password: "1234", role: "maintenance" }
   ];
 
   seed.forEach((demo) => {
@@ -192,76 +174,53 @@ function ensureDemoUsers() {
     }
   });
 
-  setJSON(STORAGE_KEYS.users, users);  
+  setJSON(STORAGE_KEYS.users, users);
 }
+
 function isSofrenorEmail(value) {
   return /^[^\s@]+@sofrenor\.ma$/i.test(value);
 }
-function startSession(user) {
 
-  const sessionData = {
+function startSession(user) {
+  session = {
     username: user.username,
     role: user.role
   };
 
-  localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(sessionData));
-
-  console.log("SESSION SAVED:", sessionData);
-
+  setJSON(STORAGE_KEYS.session, session);
   renderAuthState();
 }
-function clearSession() {
-  session = null;
-  localStorage.removeItem(STORAGE_KEYS.session);
-  renderAuthState();
-}
+
 function bindAuth() {
-
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
-
     button.addEventListener("click", () => {
-
       authMode = button.dataset.authMode;
 
-      document.querySelectorAll("[data-auth-mode]").forEach((item) => {
-        item.classList.toggle("active", item === button);
-      });
+      document.querySelectorAll("[data-auth-mode]").forEach((item) =>
+        item.classList.toggle("active", item === button)
+      );
 
-      el("roleField")?.classList.toggle("hidden", authMode !== "register");
-
+      el("roleField").classList.toggle("hidden", authMode !== "register");
       el("authMessage").textContent = "";
-
     });
-
   });
 
-  el("authForm")?.addEventListener("submit", (event) => {
-
+  el("authForm").addEventListener("submit", (event) => {
     event.preventDefault();
 
     const username = el("username").value.trim().toLowerCase();
-
     const password = el("password").value;
-
     const users = getJSON(STORAGE_KEYS.users, []);
 
-    if (!/^[^\s@]+@sofrenor\.ma$/i.test(username)) {
-
-      el("authMessage").textContent = "Email doit être @sofrenor.ma";
-
+    if (!isSofrenorEmail(username)) {
+      el("authMessage").textContent = "Utilise un email @sofrenor.ma";
       return;
-
     }
 
-    // REGISTER
     if (authMode === "register") {
-
-      if (users.some(u => u.username === username)) {
-
+      if (users.some((u) => u.username === username)) {
         el("authMessage").textContent = "Utilisateur existe déjà";
-
         return;
-
       }
 
       const newUser = {
@@ -271,74 +230,135 @@ function bindAuth() {
       };
 
       users.push(newUser);
-
       setJSON(STORAGE_KEYS.users, users);
 
       startSession(newUser);
-
       return;
-
     }
 
-    // LOGIN
     const user = users.find(
-      u => u.username === username && u.password === password
+      (u) => u.username === username && u.password === password
     );
 
     if (!user) {
-
       el("authMessage").textContent = "Identifiants incorrects";
-
       return;
-
     }
 
     startSession(user);
-
   });
 
-  el("logoutBtn")?.addEventListener("click", clearSession);
+  el("logoutBtn").addEventListener("click", () => {
+    session = null;
+    localStorage.removeItem(STORAGE_KEYS.session);
+    renderAuthState();
+  });
+}
 
-}                                                      
 function renderAuthState() {
-
-  const session = getJSON(STORAGE_KEYS.session, null);
-
-  console.log("SESSION CHECK:", session);
-
-  const authView = el("authView");
-  const appView = el("appView");
-  const sessionBox = el("sessionBox");
-
   if (!session) {
-    authView?.classList.remove("hidden");
-    appView?.classList.add("hidden");
-    sessionBox?.classList.add("hidden");
+    el("authView").classList.remove("hidden");
+    el("appView").classList.add("hidden");
+    el("sessionBox").classList.add("hidden");
     return;
   }
 
-  authView?.classList.add("hidden");
-  appView?.classList.remove("hidden");
-  sessionBox?.classList.remove("hidden");
+  el("authView").classList.add("hidden");
+  el("appView").classList.remove("hidden");
+  el("sessionBox").classList.remove("hidden");
 
-  const currentUser = el("currentUser");
-  if (currentUser) {
-    currentUser.textContent = `${session.username} - ${session.role}`;
-  }
+  const roleLabel = {
+    operator: "Operateur",
+    production: "Responsable production",
+    maintenance: "Responsable maintenance"
+  }[session.role];
+
+  el("currentUser").textContent =
+    `${session.username} - ${roleLabel}`;
 
   showView("entryView");
-  populateFormOptions?.();
-  renderSettings?.();
-  renderAll?.();
+  populateFormOptions();
+  renderSettings();
+  renderAll();
+}
+function renderAuthState() {
+  if (session && !isSofrenorEmail(session.username)) {
+    session = null;
+    localStorage.removeItem(STORAGE_KEYS.session);
+  }
+  const isLoggedIn = Boolean(session);
+el("authView").classList.toggle("hidden", isLoggedIn);
+  el("appView").classList.toggle("hidden", !isLoggedIn);
+  el("sessionBox").classList.toggle("hidden", !isLoggedIn);
+  if (!isLoggedIn) return;
+
+  const roleLabel = {
+    operator: "Operateur",
+    production: "Responsable production",
+    maintenance: "Responsable maintenance"
+  }[session.role];
+  el("currentUser").textContent = `${session.username} - ${roleLabel}`;
+
+  const isOperator = session.role === "operator";
+document.querySelectorAll("#mainNav button").forEach((button) => {
+    const allowed = !isOperator || button.dataset.view === "entryView";
+    button.classList.toggle("hidden", !allowed);
+  });
+  showView("entryView");
+  populateFormOptions();
+  renderSettings();
+  renderAll();
+}
+function bindNavigation() {
+  document.querySelectorAll("#mainNav button").forEach((button) => {
+    button.addEventListener("click", () => showView(button.dataset.view));
+  });
+  el("refreshDashboard").addEventListener("click", renderDashboard);
+  el("exportCsv").addEventListener("click", exportCsv);
+  el("clearEntries").addEventListener("click", clearEntries);
+}
+function showView(viewId) {
+  document.querySelectorAll(".view").forEach((view) => view.classList.toggle("active", view.id === viewId));
+  document.querySelectorAll("#mainNav button").forEach((button) => button.classList.toggle("active", button.dataset.view === viewId));
+  if (viewId === "dashboardView") renderDashboard();
+  if (viewId === "historyView") renderHistory();
+}
+function bindProductionForm() {
+  ["shift", "section", "post", "machine", "produced", "openTime", "hasRejects", "rejects", "hasStop", "stopDuration", "stopFamily", "stopCause", "customCause"].forEach((id) => {
+    el(id).addEventListener("input", handleFormChange);
+    el(id).addEventListener("change", handleFormChange);
+  });
+el("productionForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const metrics = calculateMetrics();
+    const entry = collectEntry(metrics);
+    const entries = getJSON(STORAGE_KEYS.entries, []);
+    entries.push(entry);
+    setJSON(STORAGE_KEYS.entries, entries);
+    lastCalculated = metrics;
+    renderKpis(el("entryKpis"), metrics);
+    renderAll();
+    el("productionForm").reset();
+    el("openTime").value = 4;
+    populateFormOptions();
+    handleFormChange();
+});
+
+  el("productionForm").addEventListener("reset", () => {
+    setTimeout(() => {
+      el("openTime").value = 4;
+      populateFormOptions();
+      handleFormChange();
+    });
+  });
 }
 function populateFormOptions() {
   fillSelect(el("shift"), config.shifts);
-  fillSelect(el("section"), Object.keys(config.sections || {}));
+  fillSelect(el("section"), Object.keys(config.sections));
   fillSelect(el("bottleType"), config.bottles);
   populatePosts();
   populateStopFamilies();
   handleFormChange();
-  console.log("CONFIG SECTIONS:", config.sections);
 }
 function populatePosts() {
   const section = el("section").value || Object.keys(config.sections)[0];
@@ -424,7 +444,7 @@ function collectEntry(metrics) {
   return {
     id: makeId(),
     timestamp: new Date().toISOString(),
-    user: getJSON(STORAGE_KEYS.session, {}).username,
+    user: session.username,
  shift: el("shift").value === "Autre" ? el("customShift").value.trim() || "Autre" : el("shift").value,
     section: el("section").value,
     bottleType: el("bottleType").value,
@@ -510,10 +530,8 @@ function drawPareto(entries) {
   const counts = {};
   stops.forEach((entry) => counts[entry.stopCause] = (counts[entry.stopCause] || 0) + 1);
   const data = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
- if (!data.length) {
-  console.log("No stop data");
-  return drawEmpty(ctx, canvas, "Aucune cause d'arret");
-}
+  if (!data.length) return drawEmpty(ctx, canvas, "Aucune cause d'arret a afficher");
+
   const margin = { top: 25, right: 45, bottom: 82, left: 45 };
 const width = canvas.width - margin.left - margin.right;
   const height = canvas.height - margin.top - margin.bottom;
@@ -558,7 +576,7 @@ if (!data.length) return drawEmpty(ctx, canvas, "Aucune evolution a afficher");
   drawAxes(ctx, margin, width, height);
   const points = data.map((item, index) => {
     const x = margin.left + (data.length === 1 ? width / 2 : index * width / (data.length - 1));
-    const y = margin.top + height - (item.value / 100) * height;
+    const y = margin.top + height - Math.min(item.value, 120) / 120 * height;
     return { x, y, label: item.label, value: item.value };
   });
  drawLine(ctx, points, "#17865a", 3);
@@ -626,15 +644,13 @@ const entries = getEntries().slice().reverse();
 function bindSettings() {
   el("saveSettings").addEventListener("click", () => {
     try {
-      const newConfig = {
-  shifts: linesToArray(el("settingsShifts").value),
-  bottles: linesToArray(el("settingsBottles").value),
-  sections: safeJSON(el("settingsSections").value, config.sections),
-  stopCauses: safeJSON(el("settingsCauses").value, config.stopCauses),
-  cadences: safeJSON(el("settingsCadences").value, config.cadences)
-};
-
-config = newConfig;
+      config = {
+        shifts: linesToArray(el("settingsShifts").value),
+        bottles: linesToArray(el("settingsBottles").value),
+        sections: JSON.parse(el("settingsSections").value),
+        stopCauses: JSON.parse(el("settingsCauses").value),
+        cadences: JSON.parse(el("settingsCadences").value)
+      };
 saveConfig();
       populateFormOptions();
       el("settingsMessage").textContent = "Parametrage enregistre.";
@@ -694,7 +710,8 @@ function updateClock() {
     weekday: "long",
     year: "numeric",
     month: "long",
-    day: "numeric" });
+    day: "numeric"
+ });
 }
 
 
