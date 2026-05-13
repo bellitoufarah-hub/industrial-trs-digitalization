@@ -254,7 +254,6 @@ function bindAuth() {
     renderAuthState();
   });
 }
-
 function renderAuthState() {
   if (!session) {
     el("authView").classList.remove("hidden");
@@ -262,7 +261,6 @@ function renderAuthState() {
     el("sessionBox").classList.add("hidden");
     return;
   }
-
   el("authView").classList.add("hidden");
   el("appView").classList.remove("hidden");
   el("sessionBox").classList.remove("hidden");
@@ -276,34 +274,6 @@ function renderAuthState() {
   el("currentUser").textContent =
     `${session.username} - ${roleLabel}`;
 
-  showView("entryView");
-  populateFormOptions();
-  renderSettings();
-  renderAll();
-}
-function renderAuthState() {
-  if (session && !isSofrenorEmail(session.username)) {
-    session = null;
-    localStorage.removeItem(STORAGE_KEYS.session);
-  }
-  const isLoggedIn = Boolean(session);
-el("authView").classList.toggle("hidden", isLoggedIn);
-  el("appView").classList.toggle("hidden", !isLoggedIn);
-  el("sessionBox").classList.toggle("hidden", !isLoggedIn);
-  if (!isLoggedIn) return;
-
-  const roleLabel = {
-    operator: "Operateur",
-    production: "Responsable production",
-    maintenance: "Responsable maintenance"
-  }[session.role];
-  el("currentUser").textContent = `${session.username} - ${roleLabel}`;
-
-  const isOperator = session.role === "operator";
-document.querySelectorAll("#mainNav button").forEach((button) => {
-    const allowed = !isOperator || button.dataset.view === "entryView";
-    button.classList.toggle("hidden", !allowed);
-  });
   showView("entryView");
   populateFormOptions();
   renderSettings();
