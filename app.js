@@ -201,49 +201,68 @@ function clearSession() {
   renderAuthState();
 }
 function bindAuth() {
+
   document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+
     button.addEventListener("click", () => {
+
       authMode = button.dataset.authMode;
 
       document.querySelectorAll("[data-auth-mode]").forEach((item) => {
         item.classList.toggle("active", item === button);
       });
 
-      safeEl("roleField")?.classList.toggle("hidden", authMode !== "register");
-      safeEl("authMessage").textContent = "";
+      el("roleField")?.classList.toggle("hidden", authMode !== "register");
+
+      el("authMessage").textContent = "";
+
     });
+
   });
 
-  safeEl("authForm")?.addEventListener("submit", (event) => {
+  el("authForm")?.addEventListener("submit", (event) => {
+
     event.preventDefault();
 
-    const username = safeEl("username").value.trim().toLowerCase();
-    const password = safeEl("password").value;
+    const username = el("username").value.trim().toLowerCase();
+
+    const password = el("password").value;
+
     const users = getJSON(STORAGE_KEYS.users, []);
 
     if (!/^[^\s@]+@sofrenor\.ma$/i.test(username)) {
-      safeEl("authMessage").textContent = "Email doit être @sofrenor.ma";
+
+      el("authMessage").textContent = "Email doit être @sofrenor.ma";
+
       return;
+
     }
 
     // REGISTER
     if (authMode === "register") {
+
       if (users.some(u => u.username === username)) {
-        safeEl("authMessage").textContent = "Utilisateur existe déjà";
+
+        el("authMessage").textContent = "Utilisateur existe déjà";
+
         return;
+
       }
 
       const newUser = {
         username,
         password,
-        role: safeEl("role").value
+        role: el("role").value
       };
 
       users.push(newUser);
+
       setJSON(STORAGE_KEYS.users, users);
 
       startSession(newUser);
+
       return;
+
     }
 
     // LOGIN
@@ -252,15 +271,20 @@ function bindAuth() {
     );
 
     if (!user) {
-      safeEl("authMessage").textContent = "Identifiants incorrects";
+
+      el("authMessage").textContent = "Identifiants incorrects";
+
       return;
+
     }
 
     startSession(user);
+
   });
 
-  safeEl("logoutBtn")?.addEventListener("click", clearSession);
-}
+  el("logoutBtn")?.addEventListener("click", clearSession);
+
+}                                                      
 function renderAuthState() {
   const authView = safeEl("authView");
   const appView = safeEl("appView");
