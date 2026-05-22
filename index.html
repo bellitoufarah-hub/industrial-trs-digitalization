@@ -1,266 +1,224 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Suivi TRS — SOFRENOR</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <header class="app-header">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suivi TRS — SOFRENOR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
       <div class="brand">
-        <img src="logo-sofrenor.webp" alt="Logo SOFRENOR" />
+        <img class="brand-logo" src="assets/sofrenor-logo.png" onerror="this.onerror=null; this.src='assets/sofrenor-logo.svg';" alt="SOFRENOR">
         <div>
-          <p>SOFRENOR</p>
+          <p class="eyebrow">Digitalisation et suivi en temps réel</p>
           <h1>Suivi TRS — SOFRENOR</h1>
         </div>
       </div>
-      <div id="sessionBox" class="session-box hidden">
-        <span id="currentUser"></span>
-        <button id="logoutBtn" class="ghost-btn" title="Se deconnecter" type="button">Deconnexion</button>
+      <div class="topbar-actions">
+        <div id="sessionBadge" class="session-badge hidden"></div>
+        <button id="logoutBtn" class="ghost-btn hidden" type="button">Se déconnecter</button>
       </div>
     </header>
 
-    <main>
-      <section id="authView" class="auth-shell">
-        <div class="login-panel">
-          <img src="logo-sofrenor.webp" alt="Logo SOFRENOR" class="login-logo" />
-          <h2>Connexion</h2>
-          <p class="muted">Acceder au suivi digital du TRS de la ligne de production.</p>
-          <div class="segmented" role="tablist" aria-label="Mode d'authentification">
-            <button class="active" type="button" data-auth-mode="login">Se connecter</button>
-            <button type="button" data-auth-mode="register">Creer un compte</button>
+    <main class="main-grid">
+      <section id="authView" class="panel auth-panel">
+        <div class="auth-copy">
+          <div class="auth-brand">
+            <img class="auth-logo" src="assets/sofrenor-logo.png" onerror="this.onerror=null; this.src='assets/sofrenor-logo.svg';" alt="SOFRENOR">
+            <p class="auth-company">SOFRENOR</p>
           </div>
-          <form id="authForm" class="stacked-form">
-            <label>
-              Email SOFRENOR
-              <input id="username" type="email" autocomplete="username" required placeholder="ex. production@sofrenor.ma" />
-            </label>
-            <label>
-              Mot de passe
-              <input id="password" type="password" autocomplete="current-password" required placeholder="Mot de passe" />
-            </label>
-            <label id="roleField" class="hidden">
-              Type de compte
-              <select id="role">
-                <option value="operator">Operateur</option>
-                <option value="production">Responsable production</option>
-                <option value="maintenance">Responsable maintenance</option>
-              </select>
-            </label>
-            <button class="primary-btn" type="submit">Connexion</button>
-            <p id="authMessage" class="form-message"></p>
-          </form>
+          <h2>Espace de connexion</h2>
+          <p class="auth-title-only">Suivi TRS — SOFRENOR</p>
+        </div>
+
+        <div class="auth-forms">
+          <div class="card">
+            <div class="card-tabs">
+              <button class="tab-btn active" data-auth-tab="login" type="button">Connexion</button>
+              <button class="tab-btn" data-auth-tab="register" type="button">Créer un compte</button>
+            </div>
+
+            <form id="loginForm" class="auth-form">
+              <label>Email<input type="email" id="loginEmail" placeholder="nom@sofrenor.ma" required></label>
+              <label>Mot de passe<input type="password" id="loginPassword" placeholder="Votre mot de passe" required></label>
+              <button class="primary-btn" type="submit">Se connecter</button>
+            </form>
+
+            <form id="registerForm" class="auth-form hidden">
+              <label>Nom complet<input type="text" id="registerName" placeholder="Nom et prénom" required></label>
+              <label>Email<input type="email" id="registerEmail" placeholder="nom@sofrenor.ma" required></label>
+              <label>Mot de passe<input type="password" id="registerPassword" placeholder="Minimum 6 caracteres" minlength="6" required></label>
+              <label>Type de compte
+                <input type="text" value="Opérateur" readonly>
+              </label>
+              <button class="primary-btn" type="submit">Créer le compte</button>
+            </form>
+
+            <p id="authMessage" class="status-message"></p>
+          </div>
         </div>
       </section>
 
-      <section id="appView" class="hidden app-shell">
-        <nav id="mainNav" class="main-nav" aria-label="Navigation principale">
-          <button class="active" type="button" data-view="entryView">Informations a saisir</button>
-          <button type="button" data-view="dashboardView">Tableau de bord</button>
-          <button type="button" data-view="historyView">Historique</button>
-          <button type="button" data-view="settingsView">Parametrage</button>
+      <section id="appView" class="hidden">
+        <nav class="nav-tabs">
+          <button class="nav-btn active" data-view="entry" type="button">Informations à saisir</button>
+          <button class="nav-btn admin-only hidden" data-view="dashboard" type="button">Tableau de bord</button>
+          <button class="nav-btn admin-only hidden" data-view="history" type="button">Historique</button>
+          <button class="nav-btn admin-only hidden" data-view="settings" type="button">Paramètres</button>
         </nav>
 
-        <section id="entryView" class="view active">
-          <div class="view-heading">
+        <section id="entryView" class="page-view">
+          <div class="page-head">
             <div>
-              <p class="eyebrow">Production</p>
-              <h2>Informations a saisir</h2>
+              <p class="eyebrow">Interface operateur</p>
+              <h2>Informations à saisir</h2>
             </div>
-            <time id="todayDate"></time>
+            <div class="date-badge" id="todayLabel"></div>
           </div>
 
-          <form id="productionForm" class="production-layout">
-            <div class="form-grid">
-              <label>
-                Horaire
-                <select id="shift" required></select>
-              </label>
-              <label id="customShiftWrap" class="hidden">
-                Horaire personnalise
-                <input id="customShift" placeholder="ex. 8h-12h" />
-              </label>
-              <label>
-                Section
-                <select id="section" required></select>
-              </label>
-              <label>
-                Type de bouteilles
-                <select id="bottleType" required></select>
-              </label>
-              <label>
-                Poste
-                <select id="post" required></select>
-              </label>
-              <label>
-                Machine
-                <select id="machine" required></select>
-              </label>
-              <label>
-                Pieces produites (4h)
-                <input id="produced" type="number" min="0" step="1" required />
-              </label>
-              <label>
-                Duree de poste (h)
-                <input id="openTime" type="number" min="0.1" step="0.1" value="4" required />
-              </label>
-              <label>
-                Cadence reelle (p/h)
-                <input id="realCadence" readonly />
-              </label>
-              <label>
-                Cadence theorique (p/h)
-                <input id="nominalCadence" readonly />
-              </label>
-              <label>
-                Il y a des rebuts ?
-                <select id="hasRejects">
-                  <option value="non">Non</option>
-                  <option value="oui">Oui</option>
-                </select>
-              </label>
-              <label id="rejectsWrap" class="hidden">
-                Combien ?
-                <input id="rejects" type="number" min="0" step="1" value="0" />
-              </label>
-              <label>
-                Il y a un arret ?
-                <select id="hasStop">
-                  <option value="non">Non</option>
-                  <option value="oui">Oui</option>
-                </select>
-              </label>
-              <label id="stopDurationWrap" class="hidden">
-                Total d'arret (h / 4h)
-                <input id="stopDuration" type="number" min="0" step="0.1" value="0" />
-              </label>
-              <label id="stopFamilyWrap" class="hidden">
-                Cause principale d'arret
-                <select id="stopFamily"></select>
-              </label>
-              <label id="stopCauseWrap" class="hidden">
-                Detail de la cause
-                <select id="stopCause"></select>
-              </label>
-              <label id="customCauseWrap" class="hidden">
-                Cause autre
-                <input id="customCause" placeholder="Saisir la cause" />
-              </label>
-            </div>
-            <div class="form-actions">
-              <button class="primary-btn" type="submit">Enregistrer</button>
-              <button class="ghost-btn" type="reset">Effacer</button>
-            </div>
-          </form>
+          <div class="content-grid">
+            <form id="entryForm" class="panel form-panel">
+              <div class="form-grid">
+                <label>Horaire<select id="shiftSelect" required></select></label>
+                <label id="customShiftWrapper" class="hidden">Autre horaire<input type="text" id="customShiftInput" placeholder="Ex: 07:00 - 14:00"></label>
+                <label>Section<select id="sectionSelect" required></select></label>
+                <label>Poste<select id="postSelect" required></select></label>
+                <label>Machine<select id="machineSelect" required></select></label>
+                <label>Pieces produites (4h)<input type="number" id="producedInput" min="0" step="1" required></label>
+                <label>
+                  Duree de poste (minutes / 4h)
+                  <input type="number" id="durationInput" min="1" max="240" step="1" value="" placeholder="Ex: 240" required>
+                  <small class="field-help">Saisir le temps d'ouverture pour la tranche de 4h. Exemple : 240 si la periode complete est prise en compte.</small>
+                </label>
+                <label>Cadence theorique (pieces/h)<input type="number" id="theoreticalCadenceInput" min="0" step="0.01" readonly></label>
+                <label>Cadence reelle (pieces/h - temps de marche)<input type="number" id="realCadenceInput" min="0" step="0.01" readonly></label>
+              </div>
 
-          <div class="kpi-strip" id="entryKpis"></div>
+              <div class="form-grid split-grid">
+                <div class="subcard">
+                  <h3>Gestion des rebuts</h3>
+                  <div class="inline-choice">
+                    <label><input type="radio" name="hasRebuts" value="non" checked> Non</label>
+                    <label><input type="radio" name="hasRebuts" value="oui"> Oui</label>
+                  </div>
+                  <div id="rebutsDetails" class="hidden stacked-fields">
+                    <label>Combien ?<input type="number" id="rebutsCountInput" min="0" step="1" value="0"></label>
+                  </div>
+                </div>
+
+                <div class="subcard">
+                  <h3>Gestion des arrets</h3>
+                  <div class="inline-choice">
+                    <label><input type="radio" name="hasStop" value="non" checked> Non</label>
+                    <label><input type="radio" name="hasStop" value="oui"> Oui</label>
+                  </div>
+                  <div id="stopDetails" class="hidden stacked-fields">
+                    <label>Cause principale d'arret (Ishikawa)<select id="stopCategorySelect"></select></label>
+                    <label>Detail<select id="stopCauseSelect"></select></label>
+                    <label id="stopOtherWrapper" class="hidden">Autre<input type="text" id="stopOtherInput" placeholder="Saisir la cause"></label>
+                    <label>Total d'arret (h)<input type="number" id="stopMinutesInput" min="0" max="4" step="0.01" value="0"></label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button class="primary-btn" type="submit">Enregistrer et calculer le TRS</button>
+                <p id="entryMessage" class="status-message"></p>
+              </div>
+            </form>
+
+            <aside class="panel score-panel">
+              <div class="score-head">
+                <p class="eyebrow">Resultats en direct</p>
+                <h3>Performance du poste</h3>
+              </div>
+              <div class="score-grid" id="scoreGrid"></div>
+            </aside>
+          </div>
         </section>
 
-        <section id="dashboardView" class="view">
-          <div class="view-heading">
-            <div>
-              <p class="eyebrow">Pilotage temps reel</p>
-              <h2>Tableau de bord TRS</h2>
-            </div>
-            <button id="refreshDashboard" class="ghost-btn" type="button">Actualiser</button>
+        <section id="dashboardView" class="page-view hidden">
+          <div class="page-head">
+            <div><p class="eyebrow">Interface responsable</p><h2>Tableau de bord TRS</h2></div>
+            <button id="resetDashboardBtn" class="ghost-btn" type="button">Supprimer les donnees</button>
           </div>
-          <div class="kpi-strip" id="dashboardKpis"></div>
+          <div class="panel dashboard-panel">
+            <div class="score-grid" id="dashboardScores"></div>
+          </div>
+
           <div class="dashboard-grid">
-            <section class="panel">
-              <h3>Criticite des machines</h3>
-              <div id="machineRanking" class="machine-list"></div>
-            </section>
-            <section class="panel pareto-panel">
-              <h3>Pareto des causes d'arret</h3>
-              <canvas id="paretoCanvas" width="760" height="360"></canvas>
-            </section>
-            <section class="panel trend-panel">
-              <h3>Evolution du TRS</h3>
-              <canvas id="trendCanvas" width="900" height="360"></canvas>
-            </section>
+            <div class="panel">
+              <div class="panel-title-row"><h3>Machines classees par criticite TRS</h3></div>
+              <div id="machineRanking" class="machine-ranking"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-title-row"><h3>Pareto des causes d'arret</h3></div>
+              <div id="paretoLegend" class="pareto-legend"></div>
+              <div id="paretoChart" class="chart-card"></div>
+            </div>
           </div>
-          <div class="dashboard-actions">
-            <button id="clearEntries" class="ghost-btn danger" type="button">Supprimer les donnees saisies et recommencer</button>
+
+          <div class="panel">
+            <div class="panel-title-row"><h3>Evolution du TRS dans le temps</h3></div>
+            <div id="trendChart" class="chart-card trend-card"></div>
           </div>
         </section>
 
-        <section id="historyView" class="view">
-          <div class="view-heading">
-            <div>
-              <p class="eyebrow">Donnees enregistrees</p>
-              <h2>Historique</h2>
+        <section id="historyView" class="page-view hidden">
+          <div class="page-head"><div><p class="eyebrow">Tracabilite</p><h2>Historique des enregistrements</h2></div></div>
+          <div class="panel">
+            <div class="history-tools">
+              <input type="search" id="historySearch" placeholder="Rechercher par date, poste, machine ou section">
+              <div class="tool-actions">
+                <button class="ghost-btn" id="exportCsvBtn" type="button">Exporter CSV</button>
+                <button class="ghost-btn" id="clearHistoryFilters" type="button">Effacer le filtre</button>
+              </div>
             </div>
-            <button id="exportCsv" class="ghost-btn" type="button">Exporter CSV</button>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Poste</th>
-                  <th>Machine</th>
-                  <th>Pieces</th>
-                  <th>Rebuts</th>
-                  <th>Cause</th>
-                  <th>TRS</th>
-                </tr>
-              </thead>
-              <tbody id="historyTable"></tbody>
-            </table>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Date</th><th>Operateur</th><th>Section</th><th>Poste</th><th>Machine</th><th>Produites</th><th>Rebuts</th><th>Cause</th><th>TRS</th></tr></thead>
+                <tbody id="historyTableBody"></tbody>
+              </table>
+            </div>
           </div>
         </section>
 
-        <section id="settingsView" class="view">
-          <div class="view-heading">
-            <div>
-              <p class="eyebrow">Responsables</p>
-              <h2>Parametrage du site</h2>
+        <section id="settingsView" class="page-view hidden">
+          <div class="page-head"><div><p class="eyebrow">Référentiel modifiable</p><h2>Paramètres administrateur</h2></div></div>
+          <div class="content-grid settings-grid">
+            <div class="panel">
+              <h3>Cadences nominales par machine</h3>
+              <form id="cadenceForm" class="stacked-fields"></form>
+              <button id="saveCadenceBtn" class="primary-btn" type="button">Enregistrer les cadences</button>
+              <p id="settingsMessage" class="status-message"></p>
             </div>
-            <button id="resetConfig" class="ghost-btn danger" type="button">Retablir les valeurs</button>
-          </div>
-          <div class="settings-grid">
-            <section class="panel">
-              <h3>Options generales</h3>
-              <label>
-                Horaires
-                <textarea id="settingsShifts" rows="4"></textarea>
+            <div class="panel">
+              <h3>Configuration complète (JSON)</h3>
+              <div id="settingsSummary" class="settings-summary"></div>
+              <label>JSON du référentiel
+                <textarea id="configEditor" rows="18" spellcheck="false"></textarea>
               </label>
-              <label>
-                Types de bouteilles
-                <textarea id="settingsBottles" rows="4"></textarea>
-              </label>
-            </section>
-            <section class="panel">
-              <h3>Sections, postes et machines</h3>
-              <label>
-                Configuration JSON
-                <textarea id="settingsSections" rows="13"></textarea>
-              </label>
-            </section>
-            <section class="panel">
-              <h3>Causes d'arret</h3>
-              <label>
-                Causes JSON
-                <textarea id="settingsCauses" rows="13"></textarea>
-              </label>
-            </section>
-            <section class="panel">
-              <h3>Cadences theoriques</h3>
-              <label>
-                Cadences JSON
-                <textarea id="settingsCadences" rows="13"></textarea>
-              </label>
-            </section>
-          </div>
-          <div class="form-actions">
-            <button id="saveSettings" class="primary-btn" type="button">Enregistrer le parametrage</button>
-            <p id="settingsMessage" class="form-message"></p>
+              <button id="saveConfigBtn" class="ghost-btn" type="button">Enregistrer toute la configuration</button>
+              <div class="admin-tools">
+                <h3>Outils de démonstration</h3>
+                <div class="demo-actions">
+                  <button id="loadDemoBtn" class="primary-btn" type="button">Charger des données démo</button>
+                  <button id="resetDemoBtn" class="ghost-btn" type="button">Réinitialiser les données</button>
+                </div>
+                <p id="demoMessage" class="status-message"></p>
+              </div>
+            </div>
           </div>
         </section>
       </section>
     </main>
+  </div>
 
-    <script src="app.js"></script>
-  </body>
+  <script src="app.js"></script>
+</body>
 </html>
