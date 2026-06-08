@@ -851,7 +851,20 @@ function handleEntrySubmit(event) {
     showMessage(el.entryMessage, "Veuillez renseigner la cause principale d'arret.", "critical");
     return;
   }
-
+  fetch("http://127.0.0.1:5000/predict", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+})
+.then(res => res.json())
+.then(res => {
+    document.getElementById("result").innerText = res.prediction;
+})
+.catch(err => console.log("ERROR:", err));
+  
+  }
   const entry = {
     id: createId(),
     date: new Date().toISOString(),
