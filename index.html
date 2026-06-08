@@ -220,22 +220,67 @@
   </div>
 
   <script src="app.js"></script>
-  <body>
+  <!DOCTYPE html>
+<html>
+<head>
+    <title>Prediction TRS</title>
+</head>
+<body>
 
-<!-- ton contenu HTML -->
+<h2>Machine Failure Prediction</h2>
+
+<input id="Année" placeholder="Année"><br>
+<input id="Mois" placeholder="Mois"><br>
+<input id="Semaine" placeholder="Semaine"><br>
+<input id="Heure_num" placeholder="Heure"><br>
+<input id="Machine_ID" placeholder="Machine ID"><br>
+<input id="Jour_ID" placeholder="Jour"><br>
+<input id="Shift_ID" placeholder="Shift"><br>
+<input id="Categorie_Duree_ID" placeholder="Categorie"><br>
+<input id="Duree_Arret_h" placeholder="Arret h"><br>
+<input id="Nb_pannes_sem_prec" placeholder="Pannes"><br>
+<input id="Moy_duree_arret_h" placeholder="Moy arret"><br>
+<input id="Temp_Armoire_moy" placeholder="Temp armoire"><br>
+<input id="Temp_Moteur_moy" placeholder="Temp moteur"><br>
+<input id="Ampeerage_moy" placeholder="Amp"><br>
+
+<button onclick="predict()">Predict</button>
+
+<h3 id="result"></h3>
 
 <script>
-function predict() {
-   fetch("http://127.0.0.1:5000/predict", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({...})
-   })
-   .then(res => res.json())
-   .then(data => console.log(data));
+async function predict() {
+    let data = {
+        Année: Number(document.getElementById("Année").value),
+        Mois: Number(document.getElementById("Mois").value),
+        Semaine: Number(document.getElementById("Semaine").value),
+        Heure_num: Number(document.getElementById("Heure_num").value),
+        Machine_ID: Number(document.getElementById("Machine_ID").value),
+        Jour_ID: Number(document.getElementById("Jour_ID").value),
+        Shift_ID: Number(document.getElementById("Shift_ID").value),
+        Categorie_Duree_ID: Number(document.getElementById("Categorie_Duree_ID").value),
+        Duree_Arret_h: Number(document.getElementById("Duree_Arret_h").value),
+        Nb_pannes_sem_prec: Number(document.getElementById("Nb_pannes_sem_prec").value),
+        Moy_duree_arret_h: Number(document.getElementById("Moy_duree_arret_h").value),
+        Temp_Armoire_moy: Number(document.getElementById("Temp_Armoire_moy").value),
+        Temp_Moteur_moy: Number(document.getElementById("Temp_Moteur_moy").value),
+        Ampeerage_moy: Number(document.getElementById("Ampeerage_moy").value)
+    };
+
+    let response = await fetch("http://127.0.0.1:5000/predict", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(data)
+    });
+
+    let result = await response.json();
+
+    document.getElementById("result").innerText =
+        "Prediction: " + result.prediction;
 }
 </script>
 
 </body>
+</html>
 </body>
 </html>
