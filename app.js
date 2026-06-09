@@ -851,7 +851,7 @@ function handleEntrySubmit(event) {
     showMessage(el.entryMessage, "Veuillez renseigner la cause principale d'arret.", "critical");
     return;
   }
-  fetch("http://127.0.0.1:5000/predict", {
+  fetch("https://TON-SPACE.hf.space/predict", {
     method: "POST",
     headers: {
         "Content-Type": "application/json"
