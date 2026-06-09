@@ -862,9 +862,7 @@ function handleEntrySubmit(event) {
 .then(res => {
     document.getElementById("result").innerText = res.prediction;
 })
-.catch(err => console.log("ERROR:", err));
-  
-  }
+  catch(err => console.log("ERROR:", err));
   const entry = {
     id: createId(),
     date: new Date().toISOString(),
