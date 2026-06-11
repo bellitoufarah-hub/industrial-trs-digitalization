@@ -266,18 +266,6 @@ async function predict() {
         Temp_Moteur_moy: Number(document.getElementById("Temp_Moteur_moy").value),
         Ampeerage_moy: Number(document.getElementById("Ampeerage_moy").value)
     };
-
-    let response = await fetch("https://TON-SPACE.hf.space/predict", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(data)
-    });
-
-    let result = await response.json();
-
-    document.getElementById("result").innerText =
-        "Prediction: " + result.prediction;
-}
 </script>
 </body>
 </html>
