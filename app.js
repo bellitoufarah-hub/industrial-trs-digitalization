@@ -2,7 +2,8 @@ const STORAGE_KEYS = {
   users: "sofrenor_trs_users",
   currentUser: "sofrenor_trs_current_user",
   entries: "sofrenor_trs_entries",
-  settings: "sofrenor_trs_settings"
+  settings: "sofrenor_trs_settings",
+  adjustments: "sofrenor_trs_adjustments"
 };
 
 const LEGACY_STORAGE_KEYS = {
@@ -378,11 +379,15 @@ document.addEventListener("DOMContentLoaded", () => {
 function cacheElements() {
   [
     "authView", "appView", "sessionBadge", "logoutBtn", "authMessage", "entryMessage", "settingsMessage", "demoMessage",
-    "loginForm", "registerForm", "shiftSelect", "customShiftWrapper", "customShiftInput",
+    "adjustmentMessage", "loginForm", "registerForm", "shiftSelect", "customShiftWrapper", "customShiftInput",
+    "entryOperatorNameInput", "cycleTimeInput",
     "sectionSelect", "bottleTypeSelect", "postSelect", "machineSelect", "producedInput", "durationInput",
     "theoreticalCadenceInput", "realCadenceInput", "rebutsDetails", "rebutsCountInput",
     "stopDetails", "stopCategorySelect", "stopCauseSelect", "stopOtherWrapper", "stopOtherInput", "stopMinutesInput",
-    "entryForm", "scoreGrid", "dashboardScores",
+    "historySearch", "clearHistoryFilters", "resetDashboardBtn", "cycleSearch", "clearCycleFilters", "cycleTableBody",
+    "adjustmentForm", "adjustmentDate", "adjustmentMachine", "adjustmentOperatorName", "weldingPressureInput",
+    "electricIntensityInput", "adjustmentCycleSpeedInput", "stationTemperatureInput", "otherDefectCheckbox",
+    "otherDefectWrapper", "otherDefectInput", "cadenceForm", "saveCadenceBtn", "settingsSummary",
     "machineRanking", "paretoChart", "paretoLegend", "trendChart", "todayLabel", "historyTableBody",
     "historySearch", "clearHistoryFilters", "resetDashboardBtn", "cadenceForm", "saveCadenceBtn", "settingsSummary",
     "configEditor", "saveConfigBtn", "loadDemoBtn", "resetDemoBtn", "exportCsvBtn"
@@ -395,13 +400,13 @@ function bootstrapData() {
   const storedUsers = readStorage(STORAGE_KEYS.users, null) || readStorage(LEGACY_STORAGE_KEYS.users, []);
   const storedEntries = readStorage(STORAGE_KEYS.entries, null) || readStorage(LEGACY_STORAGE_KEYS.entries, []);
   const storedSettings = readStorage(STORAGE_KEYS.settings, null) || readStorage(LEGACY_STORAGE_KEYS.config, deepClone(DEFAULT_SETTINGS));
-  const storedUser = readStorage(STORAGE_KEYS.currentUser, null) || readStorage(LEGACY_STORAGE_KEYS.session, null);
+   const storedAdjustments = readStorage(STORAGE_KEYS.adjustments, []);
 
   state.users = normalizeUsers(storedUsers);
   state.entries = normalizeEntries(storedEntries);
   state.settings = normalizeSettings(storedSettings);
   applyEntryFormSettings();
-  state.currentUser = normalizeCurrentUser(storedUser, state.users);
+  state.adjustments = Array.isArray(storedAdjustments) ? storedAdjustments : [];
 
   persist(STORAGE_KEYS.users, state.users);
   persist(STORAGE_KEYS.settings, state.settings);
@@ -609,16 +614,18 @@ function bindEvents() {
   el.historySearch.addEventListener("input", renderHistory);
   el.clearHistoryFilters.addEventListener("click", () => {
     el.historySearch.value = "";
-    renderHistory();
-  });
+    el.adjustmentForm.addEventListener("submit", handleAdjustmentSubmit);
+ el.otherDefectCheckbox.addEventListener("change", toggleOtherDefect);
   el.saveCadenceBtn.addEventListener("click", saveCadenceSettings);
   el.saveConfigBtn.addEventListener("click", saveFullConfiguration);
   el.loadDemoBtn.addEventListener("click", loadDemoData);
   el.resetDemoBtn.addEventListener("click", resetStoredEntries);
   el.resetDashboardBtn.addEventListener("click", resetStoredEntries);
-  el.exportCsvBtn.addEventListener("click", exportHistoryCsv);
-}
-
+  el.cycleSearch.addEventListener("input", renderCycleTimes);
+ el.clearCycleFilters.addEventListener("click", () => {
+el.cycleSearch.value = "";
+    renderCycleTimes();
+  });
 function renderStaticOptions() {
   fillSelect(el.shiftSelect, state.settings.shifts);
   if (el.bottleTypeSelect) fillSelect(el.bottleTypeSelect, state.settings.bottleTypes);
@@ -644,10 +651,15 @@ function renderTodayLabel() {
     weekday: "long",
     day: "2-digit",
     month: "long",
-    year: "numeric",
+    renderOperatorDefaults();
     hour: "2-digit",
     minute: "2-digit"
-  }).format(new Date());
+ function renderOperatorDefaults() {
+  const name = state.currentUser?.name || "";
+  if (el.entryOperatorNameInput && !el.entryOperatorNameInput.value) el.entryOperatorNameInput.value = name;
+  if (el.adjustmentOperatorName && !el.adjustmentOperatorName.value) el.adjustmentOperatorName.value = name;
+  if (el.adjustmentDate && !el.adjustmentDate.value) el.adjustmentDate.value = new Date().toISOString().slice(0, 10);
+  if (el.adjustmentMachine && !el.adjustmentMachine.value && el.machineSelect?.value) el.adjustmentMachine.value = el.machineSelect.value;
 }
 
 function startTodayTicker() {
@@ -788,25 +800,34 @@ function renderApp() {
     node.classList.toggle("hidden", !isAdmin);
   });
 
-  switchView("entry");
+  switchView(isAdmin ? "dashboard" : "entry");
   renderHistory();
+  renderCycleTimes();
   renderDashboard();
   renderCadenceSettings();
   renderSettingsSummary();
+  renderOperatorDefaults();
 }
 
 function switchAuthTab(tab) {
   document.querySelectorAll("[data-auth-tab]").forEach((button) => {
     button.classList.toggle("active", button.dataset.authTab === tab);
   });
-  el.loginForm.classList.toggle("hidden", tab !== "login");
+ document.querySelectorAll(".operator-only").forEach((node) => {
+    node.classList.toggle("hidden", isAdmin);
+  });
+
   el.registerForm.classList.toggle("hidden", tab !== "register");
   showMessage(el.authMessage, "");
 }
 
 function switchView(viewName) {
   const isAdmin = isAdminUser();
-  const allowedView = !isAdmin && viewName !== "entry" ? "entry" : viewName;
+  const operatorViews = ["entry", "adjustment"];
+  const adminViews = ["dashboard", "history", "cycleTimes", "predictive", "settings"];
+  const allowedView = isAdmin
+    ? (adminViews.includes(viewName) ? viewName : "dashboard")
+    : (operatorViews.includes(viewName) ? viewName : "entry");
   document.querySelectorAll(".nav-btn").forEach((button) => {
     button.classList.toggle("active", button.dataset.view === allowedView);
   });
@@ -815,6 +836,8 @@ function switchView(viewName) {
   });
   if (allowedView === "dashboard") renderDashboard();
   if (allowedView === "history") renderHistory();
+   if (allowedView === "cycleTimes") renderCycleTimes();
+  if (allowedView === "adjustment") renderOperatorDefaults();
 }
 
 function updateLiveMetrics() {
@@ -824,6 +847,8 @@ function updateLiveMetrics() {
   const hasStop = document.querySelector("input[name='hasStop']:checked").value === "oui";
   const rebuts = hasRebuts ? Number(el.rebutsCountInput.value || 0) : 0;
   const stopHours = hasStop ? Number(el.stopMinutesInput.value || 0) : 0;
+  const operatorName = el.entryOperatorNameInput.value.trim();
+  const cycleTime = Number(el.cycleTimeInput.value || 0);
   const stopMinutes = stopHours * 60;
   const theoreticalCadence = Number(el.theoreticalCadenceInput.value || 0);
 
@@ -851,11 +876,19 @@ function handleEntrySubmit(event) {
     showMessage(el.entryMessage, "Veuillez renseigner la cause principale d'arret.", "critical");
     return;
   }
+   if (!operatorName) {
+    showMessage(el.entryMessage, "Veuillez renseigner le nom de l'operateur.", "critical");
+    return;
+  }
+  if (cycleTime <= 0) {
+    showMessage(el.entryMessage, "Veuillez renseigner un temps de cycle valide.", "critical");
+    return;
+  }
   const entry = {
     id: createId(),
     date: new Date().toISOString(),
     displayDate: new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(new Date()),
-    operatorName: state.currentUser.name,
+    operatorName,
     operatorEmail: state.currentUser.email,
     role: state.currentUser.role,
     shift,
@@ -867,6 +900,7 @@ function handleEntrySubmit(event) {
     machine: el.machineSelect.value,
     produced: Number(el.producedInput.value || 0),
     duration: Number(el.durationInput.value || 0),
+    cycleTime,
     theoreticalCadence: Number(el.theoreticalCadenceInput.value || 0),
     realCadence: state.currentMetrics.realCadence,
     rebuts: hasRebuts ? Number(el.rebutsCountInput.value || 0) : 0,
@@ -887,6 +921,58 @@ function handleEntrySubmit(event) {
   renderStaticOptions();
   renderDashboard();
   renderHistory();
+   renderCycleTimes();
+}
+
+function handleAdjustmentSubmit(event) {
+  event.preventDefault();
+  const defects = [...document.querySelectorAll("input[name='observedDefects']:checked")].map((item) => item.value);
+  const finalDefects = defects.map((defect) => {
+    if (defect !== "Autre") return defect;
+    const other = el.otherDefectInput.value.trim();
+    return other ? `Autre : ${other}` : "Autre";
+  });
+
+  const record = {
+    id: createId(),
+    savedAt: new Date().toISOString(),
+    date: el.adjustmentDate.value,
+    shift: getRadioValue("adjustmentShift"),
+    section: getRadioValue("adjustmentSection"),
+    machine: el.adjustmentMachine.value.trim(),
+    operatorName: el.adjustmentOperatorName.value.trim(),
+    weldingPressure: Number(el.weldingPressureInput.value || 0),
+    electricIntensity: Number(el.electricIntensityInput.value || 0),
+    cycleSpeed: Number(el.adjustmentCycleSpeedInput.value || 0),
+    stationTemperature: Number(el.stationTemperatureInput.value || 0),
+    machineState: getRadioValue("machineState"),
+    machineCleaned: getRadioValue("machineCleaned"),
+    toolsChecked: getRadioValue("toolsChecked"),
+    safetyOk: getRadioValue("safetyOk"),
+    startupTestDone: getRadioValue("startupTestDone"),
+    defects: finalDefects
+  };
+
+  if (!record.operatorName || !record.machine) {
+    showMessage(el.adjustmentMessage, "Veuillez renseigner le nom operateur et la machine.", "critical");
+    return;
+  }
+
+  state.adjustments.unshift(record);
+  persist(STORAGE_KEYS.adjustments, state.adjustments);
+  el.adjustmentForm.reset();
+  toggleOtherDefect();
+  renderOperatorDefaults();
+  showMessage(el.adjustmentMessage, "Fiche de reglage enregistree.", "good");
+}
+
+function toggleOtherDefect() {
+  const isChecked = el.otherDefectCheckbox.checked;
+  el.otherDefectWrapper.classList.toggle("hidden", !isChecked);
+  if (!isChecked) el.otherDefectInput.value = "";
+}
+function getRadioValue(name) {
+  return document.querySelector(`input[name='${name}']:checked`)?.value || "";
 }
 
 function buildStopCauseLabel() {
@@ -942,6 +1028,33 @@ function renderScoreCards(container, metrics, withTargets) {
       </article>
     `;
   }).join("");
+}
+function renderCycleTimes() {
+  const query = el.cycleSearch.value.trim().toLowerCase();
+  const rows = state.entries
+    .filter((entry) => Number(entry.cycleTime || 0) > 0)
+    .filter((entry) => {
+      const haystack = [entry.displayDate, entry.operatorName, entry.section, entry.post, entry.machine].join(" ").toLowerCase();
+      return haystack.includes(query);
+    });
+
+  if (!rows.length) {
+    el.cycleTableBody.innerHTML = "<tr><td colspan='8' class='status-message'>Aucun temps de cycle enregistre pour le moment.</td></tr>";
+    return;
+  }
+
+  el.cycleTableBody.innerHTML = rows.map((entry) => `
+    <tr>
+      <td>${entry.displayDate}</td>
+      <td>${entry.operatorName}</td>
+      <td>${entry.section}</td>
+      <td>${entry.post}</td>
+      <td>${entry.machine}</td>
+      <td>${Number(entry.cycleTime).toFixed(2)} s</td>
+      <td>${Number(entry.realCadence || 0).toFixed(2)} pieces/h</td>
+      <td class="${getStatus(entry.trs * 100).className}">${(entry.trs * 100).toFixed(1)}%</td>
+    </tr>
+  `).join("");
 }
 
 function renderDashboard() {
@@ -1324,6 +1437,7 @@ function resetStoredEntries() {
   persist(STORAGE_KEYS.entries, state.entries);
   renderDashboard();
   renderHistory();
+  renderCycleTimes();
   showMessage(el.demoMessage, "Historique reinitialise.", "medium");
   showMessage(el.entryMessage, "", "");
 }
