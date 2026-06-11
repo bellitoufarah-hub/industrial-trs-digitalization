@@ -66,11 +66,12 @@
 
       <section id="appView" class="hidden">
         <nav class="nav-tabs">
-          <button class="nav-btn active" data-view="entry" type="button">Informations à saisir</button>
-          <button class="nav-btn admin-only hidden" data-view="dashboard" type="button">Tableau de bord</button>
+         <button class="nav-btn active" data-view="entry" type="button">Informations Ã  saisir</button>
+          <button class="nav-btn operator-only hidden" data-view="adjustment" type="button">Fiche de reglage digital</button>
           <button class="nav-btn admin-only hidden" data-view="history" type="button">Historique</button>
-          <button class="nav-btn admin-only hidden" data-view="settings" type="button">Paramètres</button>
-        </nav>
+          <button class="nav-btn admin-only hidden" data-view="history" type="button">Historique</button>
+          <button class="nav-btn admin-only hidden" data-view="cycleTimes" type="button">Temps de cycle operateurs</button>
+          <button class="nav-btn admin-only hidden" data-view="predictive" type="button">Modele predictif des pannes</button>
 
         <section id="entryView" class="page-view">
           <div class="page-head">
@@ -88,8 +89,8 @@
                 <label id="customShiftWrapper" class="hidden">Autre horaire<input type="text" id="customShiftInput" placeholder="Ex: 07:00 - 14:00"></label>
                 <label>Section<select id="sectionSelect" required></select></label>
                 <label>Poste<select id="postSelect" required></select></label>
-                <label>Machine<select id="machineSelect" required></select></label>
-                <label>Pieces produites (4h)<input type="number" id="producedInput" min="0" step="1" required></label>
+                  <label>Temps de cycle (s)<input type="number" id="cycleTimeInput" min="0" step="0.01" placeholder="Ex: 18.5" required></label>
+                <label>Horaire<select id="shiftSelect" required></select></label>
                 <label>
                   Duree de poste (minutes / 4h)
                   <input type="number" id="durationInput" min="1" max="240" step="1" value="" placeholder="Ex: 240" required>
@@ -147,6 +148,81 @@
             <div><p class="eyebrow">Interface responsable</p><h2>Tableau de bord TRS</h2></div>
             <button id="resetDashboardBtn" class="ghost-btn" type="button">Supprimer les donnees</button>
           </div>
+          <section id="adjustmentView" class="page-view hidden">
+          <div class="page-head">
+            <div>
+              <p class="eyebrow">Checklist operateur</p>
+              <h2>Fiche de reglage digitale - BD 12 kg</h2>
+            </div>
+          </div>
+          <form id="adjustmentForm" class="panel adjustment-form">
+            <div class="form-section-title">1. Informations generales</div>
+            <div class="form-grid">
+              <label>Date<input type="date" id="adjustmentDate" required></label>
+              <label>Machine<input type="text" id="adjustmentMachine" placeholder="Nom de la machine" required></label>
+              <label>Nom operateur<input type="text" id="adjustmentOperatorName" placeholder="Nom complet" required></label>
+            </div>
+            <div class="check-grid">
+              <div class="subcard">
+                <h3>Shift</h3>
+                <div class="inline-choice">
+                  <label><input type="radio" name="adjustmentShift" value="07h-15h" checked> 07h-15h</label>
+                  <label><input type="radio" name="adjustmentShift" value="15h-23h"> 15h-23h</label>
+                  <label><input type="radio" name="adjustmentShift" value="23h-07h"> 23h-07h</label>
+                </div>
+              </div>
+              <div class="subcard">
+                <h3>Section</h3>
+                <div class="inline-choice">
+                  <label><input type="radio" name="adjustmentSection" value="Soudage" checked> Soudage</label>
+                  <label><input type="radio" name="adjustmentSection" value="Mecanique"> Mecanique</label>
+                  <label><input type="radio" name="adjustmentSection" value="Finition"> Finition</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-section-title">2. Parametres de reglage machine</div>
+            <div class="form-grid">
+              <label>Pression de soudage (bar)<input type="number" id="weldingPressureInput" min="0" step="0.01"></label>
+              <label>Intensite electrique (A)<input type="number" id="electricIntensityInput" min="0" step="0.01"></label>
+              <label>Vitesse de cycle (s)<input type="number" id="adjustmentCycleSpeedInput" min="0" step="0.01"></label>
+              <label>Temperature poste (deg C)<input type="number" id="stationTemperatureInput" step="0.01"></label>
+            </div>
+            <div class="subcard">
+              <h3>Etat de la machine</h3>
+              <div class="inline-choice">
+                <label><input type="radio" name="machineState" value="OK" checked> OK</label>
+                <label><input type="radio" name="machineState" value="En maintenance"> En maintenance</label>
+                <label><input type="radio" name="machineState" value="En alerte"> En alerte</label>
+              </div>
+            </div>
+
+            <div class="form-section-title">3. Checklist operateur</div>
+            <div class="check-grid">
+              <div class="subcard"><h3>Machine nettoyee</h3><div class="inline-choice"><label><input type="radio" name="machineCleaned" value="Oui" checked> Oui</label><label><input type="radio" name="machineCleaned" value="Non"> Non</label></div></div>
+              <div class="subcard"><h3>Verification des outils</h3><div class="inline-choice"><label><input type="radio" name="toolsChecked" value="Oui" checked> Oui</label><label><input type="radio" name="toolsChecked" value="Non"> Non</label></div></div>
+              <div class="subcard"><h3>Securite respectee</h3><div class="inline-choice"><label><input type="radio" name="safetyOk" value="Oui" checked> Oui</label><label><input type="radio" name="safetyOk" value="Non"> Non</label></div></div>
+              <div class="subcard"><h3>Test de demarrage effectue</h3><div class="inline-choice"><label><input type="radio" name="startupTestDone" value="Oui" checked> Oui</label><label><input type="radio" name="startupTestDone" value="Non"> Non</label></div></div>
+            </div>
+
+            <div class="form-section-title">4. Defauts observes</div>
+            <div class="subcard">
+              <div class="inline-choice defect-choice">
+                <label><input type="checkbox" name="observedDefects" value="Fuite"> Fuite</label>
+                <label><input type="checkbox" name="observedDefects" value="Deformation"> Deformation</label>
+                <label><input type="checkbox" name="observedDefects" value="Mauvaise soudure"> Mauvaise soudure</label>
+                <label><input type="checkbox" id="otherDefectCheckbox" name="observedDefects" value="Autre"> Autre</label>
+              </div>
+              <label id="otherDefectWrapper" class="hidden">Autre defaut<input type="text" id="otherDefectInput" placeholder="Decrire le defaut"></label>
+            </div>
+
+            <div class="form-actions">
+              <button class="primary-btn" type="submit">Enregistrer la fiche</button>
+              <p id="adjustmentMessage" class="status-message"></p>
+            </div>
+          </form>
+        </section>
+
           <div class="panel dashboard-panel">
             <div class="score-grid" id="dashboardScores"></div>
           </div>
@@ -187,7 +263,26 @@
             </div>
           </div>
         </section>
+  <section id="cycleTimesView" class="page-view hidden">
+          <div class="page-head"><div><p class="eyebrow">Comparaison operateurs</p><h2>Temps de cycle selon operateur</h2></div></div>
+          <div class="panel">
+            <div class="history-tools">
+              <input type="search" id="cycleSearch" placeholder="Rechercher par operateur, machine ou section">
+              <button class="ghost-btn" id="clearCycleFilters" type="button">Effacer le filtre</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Date</th><th>Operateur</th><th>Section</th><th>Poste</th><th>Machine</th><th>Temps de cycle</th><th>Cadence reelle</th><th>TRS</th></tr></thead>
+                <tbody id="cycleTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
 
+        <section id="predictiveView" class="page-view hidden">
+          <div class="page-head"><div><p class="eyebrow">Maintenance intelligente</p><h2>Modele predictif des pannes</h2></div></div>
+          <iframe class="predictive-frame" src="predictive.html" title="Modele predictif des pannes"></iframe>
+        </section>
         <section id="settingsView" class="page-view hidden">
           <div class="page-head"><div><p class="eyebrow">Référentiel modifiable</p><h2>Paramètres administrateur</h2></div></div>
           <div class="content-grid settings-grid">
