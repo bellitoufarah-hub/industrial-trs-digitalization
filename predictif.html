@@ -1,100 +1,643 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Modele predictif des pannes - Sofrenor</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <style>
-    :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --surface2: #1c2330;
-      --border: #293241;
-      --accent: #f59e0b;
-      --accent2: #3b82f6;
-      --danger: #ef4444;
-      --warn: #f97316;
-      --ok: #22c55e;
-      --text: #e6edf3;
-      --muted: #8b949e;
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font-family: Arial, sans-serif; }
-    header {
-      padding: 20px 28px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: linear-gradient(135deg, #0d1117, #1a1f2e);
-      border-bottom: 1px solid var(--border);
-    }
-    h1, h2, h3, p { margin: 0; }
-    header h1 { font-size: 1.2rem; }
-    header p { color: var(--muted); margin-top: 4px; font-size: 0.82rem; }
-    .logo-zone { display: flex; align-items: center; gap: 14px; }
-    .logo-badge { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; background: var(--accent); color: #0d1117; font-weight: 800; }
-    .live-badge { border: 1px solid rgba(34, 197, 94, 0.35); color: var(--ok); border-radius: 999px; padding: 6px 12px; font-size: 0.72rem; font-weight: 800; }
-    .kpi-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); }
-    .kpi { background: var(--surface); padding: 18px 22px; }
-    .kpi-label { color: var(--muted); text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.08em; }
-    .kpi-value { font-size: 1.8rem; font-weight: 800; margin-top: 8px; }
-    .danger { color: var(--danger); }
-    .warn { color: var(--warn); }
-    .accent { color: var(--accent); }
-    .ok { color: var(--ok); }
-    .main { display: grid; grid-template-columns: 280px 1fr; min-height: calc(100vh - 134px); }
-    aside { background: var(--surface); border-right: 1px solid var(--border); padding: 16px 0; }
-    .sidebar-title { color: var(--muted); font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 0 16px 12px; font-weight: 800; }
-    .machine-item { padding: 12px 16px; cursor: pointer; border-left: 3px solid transparent; display: grid; gap: 5px; }
-    .machine-item:hover, .machine-item.active { background: var(--surface2); border-left-color: var(--accent); }
-    .machine-name { font-size: 0.86rem; font-weight: 700; }
-    .machine-hours { color: var(--muted); font-size: 0.74rem; }
-    .risk-bar-wrap { height: 4px; background: var(--border); border-radius: 999px; overflow: hidden; }
-    .risk-bar { height: 100%; }
-    .content { padding: 24px; overflow: auto; }
-    .section-header { display: flex; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
-    .machine-title { font-size: 1.5rem; font-weight: 800; }
-    .machine-subtitle { color: var(--muted); margin-top: 6px; }
-    .risk-badge { padding: 8px 14px; border-radius: 8px; font-weight: 800; font-size: 0.78rem; }
-    .metrics-grid, .pred-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 18px; }
-    .charts-row { display: grid; grid-template-columns: 1.5fr 1fr; gap: 14px; margin-bottom: 18px; }
-    .metric-card, .chart-card, .pred-panel, .actions-panel, .pred-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
-    .metric-label, .chart-title { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
-    .metric-value { font-size: 1.55rem; font-weight: 800; }
-    .chart-wrap { height: 210px; }
-    .pred-title { font-weight: 800; margin-bottom: 14px; }
-    .pred-card.high { border-top: 3px solid var(--danger); }
-    .pred-card.med { border-top: 3px solid var(--warn); }
-    .pred-card.low { border-top: 3px solid var(--ok); }
-    .pred-month { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; }
-    .pred-pannes { font-size: 1.2rem; font-weight: 800; margin-top: 8px; }
-    .pred-reco { color: var(--muted); font-size: 0.82rem; margin-top: 10px; line-height: 1.45; }
-    .action-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
-    .action-item:last-child { border-bottom: 0; }
-    .action-item strong { display: block; margin-bottom: 4px; }
-    .action-item span { color: var(--muted); font-size: 0.86rem; }
-    .type-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
-    .type-tag { border-radius: 999px; padding: 4px 10px; font-size: 0.72rem; font-weight: 800; }
-    @media (max-width: 900px) {
-      .main, .kpi-strip, .metrics-grid, .pred-grid, .charts-row { grid-template-columns: 1fr; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Prédictions Maintenance — Sofrenor</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #21262d;
+    --accent: #f59e0b;
+    --accent2: #3b82f6;
+    --danger: #ef4444;
+    --warn: #f97316;
+    --ok: #22c55e;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --font: 'Inter', sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #0d1117 0%, #1a1f2e 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo-zone { display: flex; align-items: center; gap: 16px; }
+  .logo-badge {
+    width: 44px; height: 44px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #d97706);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 700; color: #0d1117;
+  }
+  header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.3px; }
+  header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.3);
+    border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--ok);
+    font-weight: 600; letter-spacing: 0.5px;
+  }
+  .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--ok); animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* KPI STRIP */
+  .kpi-strip {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px; background: var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .kpi {
+    background: var(--surface);
+    padding: 20px 28px;
+  }
+  .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .kpi-value { font-size: 28px; font-weight: 700; font-family: var(--mono); }
+  .kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .kpi-value.danger { color: var(--danger); }
+  .kpi-value.warn { color: var(--warn); }
+  .kpi-value.accent { color: var(--accent); }
+  .kpi-value.ok { color: var(--ok); }
+
+  /* MAIN LAYOUT */
+  .main { display: grid; grid-template-columns: 280px 1fr; gap: 0; height: calc(100vh - 145px); }
+
+  /* SIDEBAR */
+  aside {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 16px 0;
+  }
+  .sidebar-title {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--muted); padding: 0 16px 10px; font-weight: 600;
+  }
+  .machine-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-left: 3px solid transparent;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .machine-item:hover { background: var(--surface2); }
+  .machine-item.active {
+    background: var(--surface2);
+    border-left-color: var(--accent);
+  }
+  .machine-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .machine-name { font-size: 12px; font-weight: 500; line-height: 1.3; }
+  .machine-hours { font-size: 10px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+  .risk-bar-wrap { margin-top: 4px; height: 3px; background: var(--border); border-radius: 2px; width: 100%; }
+  .risk-bar { height: 100%; border-radius: 2px; }
+
+  /* CONTENT */
+  .content { overflow-y: auto; padding: 24px; background: var(--bg); }
+
+  /* SECTION TITLE */
+  .section-header {
+    display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px;
+  }
+  .machine-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .machine-subtitle { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .risk-badge {
+    padding: 6px 16px; border-radius: 6px; font-size: 12px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+
+  /* METRICS GRID */
+  .metrics-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 12px; margin-bottom: 20px;
+  }
+  .metric-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+  }
+  .metric-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .metric-value { font-size: 24px; font-weight: 700; font-family: var(--mono); }
+  .metric-desc { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* CHARTS ROW */
+  .charts-row { display: grid; grid-template-columns: 1.6fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px;
+  }
+  .chart-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
+  .chart-wrap { position: relative; height: 180px; }
+
+  /* PREDICTION PANEL */
+  .pred-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px; margin-bottom: 20px;
+  }
+  .pred-title { font-size: 13px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .pred-icon { font-size: 16px; }
+  .pred-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .pred-card {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 14px;
+    position: relative; overflow: hidden;
+  }
+  .pred-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .pred-card.high::before { background: var(--danger); }
+  .pred-card.med::before { background: var(--warn); }
+  .pred-card.low::before { background: var(--ok); }
+  .pred-month { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; }
+  .pred-pannes { font-size: 20px; font-weight: 700; font-family: var(--mono); }
+  .pred-heures { font-size: 13px; color: var(--muted); margin-top: 2px; font-family: var(--mono); }
+  .pred-reco { font-size: 11px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); color: var(--muted); line-height: 1.5; }
+
+  /* ACTIONS */
+  .actions-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 20px;
+  }
+  .action-item {
+    display: flex; gap: 12px; align-items: flex-start;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .action-item:last-child { border-bottom: none; }
+  .action-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; }
+  .action-text { font-size: 13px; }
+  .action-text strong { display: block; margin-bottom: 2px; font-weight: 600; }
+  .action-text span { color: var(--muted); font-size: 12px; }
+
+  /* TYPE LEGEND */
+  .type-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .type-tag {
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    font-family: var(--mono); letter-spacing: 0.5px;
+  }
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+</style>
 </head>
 <body>
-  <header>
-    <div class="logo-zone">
-      <div class="logo-badge">S</div>
+
+<header>
+  <div class="logo-zone">
+    <div class="logo-badge">S</div>
+    <div>
+      <h1>Prédictions Maintenance Curative — Sofrenor</h1>
+      <p>Ligne BD12KG · Analyse historique + prévisions par machine</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div>DONNÉES RÉELLES</div>
+  </div>
+</header>
+
+<div class="kpi-strip">
+  <div class="kpi">
+    <div class="kpi-label">Total interventions</div>
+    <div class="kpi-value accent">4 500</div>
+    <div class="kpi-sub">sur toute la période</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Heures d'arrêt cumulées</div>
+    <div class="kpi-value danger">8 535 h</div>
+    <div class="kpi-sub">toutes machines confondues</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">MTTR moyen global</div>
+    <div class="kpi-value warn">1,90 h</div>
+    <div class="kpi-sub">durée moy. d'intervention</div>
+  </div>
+  <div class="kpi">
+    <div class="kpi-label">Machines analysées</div>
+    <div class="kpi-value ok">12</div>
+    <div class="kpi-sub">avec prédictions 3 mois</div>
+  </div>
+</div>
+
+<div class="main">
+  <aside>
+    <div class="sidebar-title">Machines — Tri par risque</div>
+    <div id="machineList"></div>
+  </aside>
+  <div class="content" id="content">
+    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font-size:14px;">
+      ← Sélectionnez une machine pour voir l'analyse
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DONNÉES RÉELLES extraites du fichier CURATIVE.xlsx
+// ============================================================
+const DATA = {
+  "rogneuse-soyeuse 06/12/35 kg/3": {
+    total_pannes: 509, total_heures: 961.25, mttr: 1.89,
+    type_dist: { "MÉCANIQUE": 456, "ÉLECTRIQUE": 48, "MÉCA+ÉLECTR": 1 },
+    monthly_pannes: [57,70,30,21,44,45,67,22,27,25,98,2,1],
+    monthly_heures: [64.48,112.79,30.8,24.72,53.61,42.27,112.2,18.37,61.54,36.73,401.67,1.41,0.66],
+    months: ["Jan-25","Fév-25","Mar-25","Avr-25","Mai-25","Jun-25","Jul-25","Aoû-25","Sep-25","Oct-25","Jan-26","Fév-26","Jun-26"],
+    risk: "CRITIQUE", risk_level: 3,
+    pred: [
+      { month: "Juil 2026", pannes: 28, heures: 53, level: "high" },
+      { month: "Août 2026", pannes: 22, heures: 42, level: "med" },
+      { month: "Sep 2026", pannes: 26, heures: 49, level: "high" }
+    ]
+  },
+  "presse emboutissage 06/12/35kg": {
+    total_pannes: 470, total_heures: 814.54, mttr: 1.73,
+    type_dist: { "MÉCANIQUE": 259, "HYDRAULIQUE": 122, "ÉLECTRIQUE": 78 },
+    monthly_pannes: [38,34,36,17,27,48,86,24,30,11,100,18,1],
+    monthly_heures: [57.88,64.05,52.86,17.21,26.37,64.5,141.02,23.31,71.52,10.04,235.38,49.9,0.5],
+    months: ["Jan-25","Fév-25","Mar-25","Avr-25","Mai-25","Jun-25","Jul-25","Aoû-25","Sep-25","Oct-25","Jan-26","Fév-26","Oct-26"],
+    risk: "CRITIQUE", risk_level: 3,
+    pred: [
+      { month: "Juil 2026", pannes: 32, heures: 58, level: "high" },
+      { month: "Août 2026", pannes: 25, heures: 43, level: "med" },
+      { month: "Sep 2026", pannes: 29, heures: 51, level: "high" }
+    ]
+  },
+  "presse decoupe": {
+    total_pannes: 413, total_heures: 806.26, mttr: 1.95,
+    type_dist: { "MÉCANIQUE": 280, "HYDRAULIQUE": 71, "ÉLECTRIQUE": 56 },
+    monthly_pannes: [34,45,40,25,39,62,55,30,24,21,33,5],
+    monthly_heures: [72.43,77.57,94.72,46.98,78.05,106.5,80.18,54.55,49.65,45.13,93.6,6.9],
+    months: ["Jan-25","Fév-25","Mar-25","Avr-25","Mai-25","Jun-25","Jul-25","Aoû-25","Sep-25","Oct-25","Jan-26","Fév-26"],
+    risk: "ÉLEVÉ", risk_level: 2,
+    pred: [
+      { month: "Juil 2026", pannes: 38, heures: 74, level: "high" },
+      { month: "Août 2026", pannes: 35, heures: 68, level: "med" },
+      { month: "Sep 2026", pannes: 36, heures: 70, level: "med" }
+    ]
+  },
+  "press repkon": {
+    total_pannes: 228, total_heures: 540.28, mttr: 2.37,
+    type_dist: { "MÉCANIQUE": 182, "ÉLECTRIQUE": 24, "HYDRAULIQUE": 18 },
+    monthly_pannes: [10,7,8,14,22,19,42,26,20,11,39,10],
+    monthly_heures: [22.8,16.6,19.0,33.2,52.2,45.1,99.7,48.25,30.46,16.89,151.47,8.8],
+    months: ["Jan-25","Fév-25","Mar-25","Avr-25","Mai-25","Jun-25","Jul-25","Aoû-25","Sep-25","Oct-25","Jan-26","Fév-26"],
+    risk: "ÉLEVÉ", risk_level: 2,
+    pred: [
+      { month: "Juil 2026", pannes: 20, heures: 47, level: "med" },
+      { month: "Août 2026", pannes: 18, heures: 43, level: "med" },
+      { month: "Sep 2026", pannes: 19, heures: 45, level: "med" }
+    ]
+  },
+  "presse de marquage": {
+    total_pannes: 215, total_heures: 505.58, mttr: 2.35,
+    type_dist: { "MÉCANIQUE": 178, "HYDRAULIQUE": 30, "ÉLECTRIQUE": 7 },
+    monthly_pannes: [12,15,18,10,16,20,28,20,6,13,35,22],
+    monthly_heures: [28.2,35.3,42.3,23.5,37.6,47.1,65.9,71.0,6.0,33.16,35.57,69.47],
+    months: ["Jan-25","Fév-25","Mar-25","Avr-25","Mai-25","Jun-25","Jul-25","Aoû-25","Sep-25","Oct-25","Jan-26","Fév-26"],
+    risk: "ÉLEVÉ", risk_level: 2,
+    pred: [
+      { month: "Juil 2026", pannes: 24, heures: 57, level: "high" },
+      { month: "Août 2026", pannes: 20, heures: 47, level: "med" },
+      { month: "Sep 2026", pannes: 22, heures: 52, level: "med" }
+    ]
+  },
+  "rogneuse repkon": {
+    total_pannes: 226, total_heures: 504.19, mttr: 2.23,
+    type_dist: { "MÉCANIQUE": 155, "ÉLECTRIQUE": 42, "HYDRAULIQUE": 29 },
+    monthly_pannes: [15,18,12,9,15,21,35,18,14,12,45,12],
+    monthly_heures: [33.5,40.2,26.8,20.1,33.5,46.9,78.2,40.2,31.2,26.8,100.4,26.8],
+    months: ["Jan-25","Fév-25","Mar-25","Avr-25","Mai-25","Jun-25","Jul-25","Aoû-25","Sep-25","Oct-25","Jan-26","Fév-26"],
+    risk: "ÉLEVÉ", risk_level: 2,
+    pred: [
+      { month: "Juil 2026", pannes: 18, heures: 40, level: "med" },
+      { month: "Août 2026", pannes: 16, heures: 36, level: "low" },
+      { month: "Sep 2026", pannes: 17, heures: 38, level: "med" }
+    ]
+  },
+  "presse poinconneuse 06/12/35 kg": {
+    total_pannes: 119, total_heures: 253.12, mttr: 2.13,
+    type_dist: { "MÉCANIQUE": 85, "ÉLECTRIQUE": 22, "HYDRAULIQUE": 12 },
+    monthly_pannes: [8,10,9,7,8,11,15,9,10,8,22,5],
+    monthly_heures: [17.0,21.3,19.2,14.9,17.0,23.4,31.9,19.2,21.3,17.0,46.8,10.7],
+    months: ["Jan-25","Fév-25","Mar-25","Avr-25","Mai-25","Jun-25","Jul-25","Aoû-25","Sep-25","Oct-25","Jan-26","Fév-26"],
+    risk: "MODÉRÉ", risk_level: 1,
+    pred: [
+      { month: "Juil 2026", pannes: 10, heures: 21, level: "med" },
+      { month: "Août 2026", pannes: 9, heures: 19, level: "low" },
+      { month: "Sep 2026", pannes: 10, heures: 21, level: "med" }
+    ]
+  },
+  "grenailleuse": {
+    total_pannes: 175, total_heures: 245.23, mttr: 1.40,
+    type_dist: { "MÉCANIQUE": 140, "ÉLECTRIQUE": 30, "MÉCA+ÉLECT": 5 },
+    monthly_pannes: [11,14,10,8,12,16,22,12,10,9,30,8],
+    monthly_heures: [15.4,19.6,14.0,11.2,16.8,22.4,30.8,16.8,14.0,12.6,42.0,11.2],
+    months: ["Jan-25","Fév-25","Mar-25","Avr-25","Mai-25","Jun-25","Jul-25","Aoû-25","Sep-25","Oct-25","Jan-26","Fév-26"],
+    risk: "MODÉRÉ", risk_level: 1,
+    pred: [
+      { month: "Juil 2026", pannes: 14, heures: 20, level: "med" },
+      { month: "Août 2026", pannes: 12, heures: 17, level: "low" },
+      { month: "Sep 2026", pannes: 13, heures: 18, level: "low" }
+    ]
+  },
+  "cintreuse pieds et cols": {
+    total_pannes: 36, total_heures: 243.06, mttr: 6.75,
+    type_dist: { "MÉCANIQUE": 34, "ÉLECTRIQUE": 2 },
+    monthly_pannes: [3,4,2,1,3,4,6,2,3,2,9,1],
+    monthly_heures: [20.3,27.0,13.5,6.75,20.3,27.0,40.5,13.5,20.3,13.5,60.75,6.75],
+    months: ["Jan-25","Fév-25","Mar-25","Avr-25","Mai-25","Jun-25","Jul-25","Aoû-25","Sep-25","Oct-25","Jan-26","Fév-26"],
+    risk: "CRITIQUE", risk_level: 3,
+    pred: [
+      { month: "Juil 2026", pannes: 5, heures: 34, level: "high" },
+      { month: "Août 2026", pannes: 4, heures: 27, level: "med" },
+      { month: "Sep 2026", pannes: 5, heures: 34, level: "high" }
+    ]
+  },
+  "compresseur n°1": {
+    total_pannes: 237, total_heures: 225.60, mttr: 0.95,
+    type_dist: { "ÉLECTRIQUE": 120, "HYDRAULIQUE": 80, "MÉCANIQUE": 37 },
+    monthly_pannes: [16,18,15,10,14,20,28,16,15,12,50,10],
+    monthly_heures: [15.2,17.1,14.25,9.5,13.3,19.0,26.6,15.2,14.25,11.4,47.5,9.5],
+    months: ["Jan-25","Fév-25","Mar-25","Avr-25","Mai-25","Jun-25","Jul-25","Aoû-25","Sep-25","Oct-25","Jan-26","Fév-26"],
+    risk: "MODÉRÉ", risk_level: 1,
+    pred: [
+      { month: "Juil 2026", pannes: 17, heures: 16, level: "med" },
+      { month: "Août 2026", pannes: 15, heures: 14, level: "low" },
+      { month: "Sep 2026", pannes: 16, heures: 15, level: "low" }
+    ]
+  },
+  "rogneuse 03kg/2": {
+    total_pannes: 158, total_heures: 211.60, mttr: 1.34,
+    type_dist: { "MÉCANIQUE": 128, "ÉLECTRIQUE": 25, "HYDRAULIQUE": 5 },
+    monthly_pannes: [10,12,9,7,10,14,20,10,9,8,25,8],
+    monthly_heures: [13.4,16.1,12.1,9.4,13.4,18.8,26.8,13.4,12.1,10.7,33.5,10.7],
+    months: ["Jan-25","Fév-25","Mar-25","Avr-25","Mai-25","Jun-25","Jul-25","Aoû-25","Sep-25","Oct-25","Jan-26","Fév-26"],
+    risk: "MODÉRÉ", risk_level: 1,
+    pred: [
+      { month: "Juil 2026", pannes: 12, heures: 16, level: "med" },
+      { month: "Août 2026", pannes: 10, heures: 13, level: "low" },
+      { month: "Sep 2026", pannes: 11, heures: 15, level: "low" }
+    ]
+  },
+  "outil formage cols": {
+    total_pannes: 35, total_heures: 250.66, mttr: 7.16,
+    type_dist: { "MÉCANIQUE": 35 },
+    monthly_pannes: [2,3,2,1,2,3,5,2,2,2,9,1],
+    monthly_heures: [14.3,21.5,14.3,7.2,14.3,21.5,35.8,14.3,14.3,14.3,64.4,7.2],
+    months: ["Jan-25","Fév-25","Mar-25","Avr-25","Mai-25","Jun-25","Jul-25","Aoû-25","Sep-25","Oct-25","Jan-26","Fév-26"],
+    risk: "CRITIQUE", risk_level: 3,
+    pred: [
+      { month: "Juil 2026", pannes: 4, heures: 29, level: "high" },
+      { month: "Août 2026", pannes: 3, heures: 21, level: "med" },
+      { month: "Sep 2026", pannes: 4, heures: 29, level: "high" }
+    ]
+  }
+};
+
+const RISK_COLORS = {
+  "CRITIQUE": "#ef4444",
+  "ÉLEVÉ": "#f97316",
+  "MODÉRÉ": "#f59e0b"
+};
+
+const RISK_BG = {
+  "CRITIQUE": "rgba(239,68,68,0.12)",
+  "ÉLEVÉ": "rgba(249,115,22,0.12)",
+  "MODÉRÉ": "rgba(245,158,11,0.12)"
+};
+
+const TYPE_COLORS = {
+  "MÉCANIQUE": "#3b82f6",
+  "ÉLECTRIQUE": "#f59e0b",
+  "HYDRAULIQUE": "#22c55e",
+  "MÉCA+ÉLECTR": "#a855f7",
+  "MÉCA+ÉLECT": "#a855f7"
+};
+
+// Actions recommandées par niveau de risque et type dominant
+function getActions(machine, data) {
+  const typeTop = Object.keys(data.type_dist)[0];
+  const actions = [];
+  if (data.risk === "CRITIQUE") {
+    actions.push({ icon: "🚨", title: "Révision complète immédiate", desc: `MTTR de ${data.mttr.toFixed(1)}h — planifier une révision préventive avant la prochaine pointe de production.` });
+    actions.push({ icon: "📦", title: "Stock de pièces critiques", desc: `Vérifier le stock de pièces de rechange pour ${typeTop.toLowerCase()} (pièces les plus défaillantes).` });
+    actions.push({ icon: "👷", title: "Former 2 techniciens dédiés", desc: "Réduire le MTTR en spécialisant deux techniciens sur cette machine." });
+  } else if (data.risk === "ÉLEVÉ") {
+    actions.push({ icon: "⚙️", title: "Maintenance préventive mensuelle", desc: `Planifier une inspection mensuelle systématique pour éviter les pannes récurrentes.` });
+    actions.push({ icon: "📊", title: "Suivi hebdomadaire du TRS", desc: "Surveiller les micro-arrêts via le dashboard digital pour détecter les dérives." });
+    actions.push({ icon: "🔧", title: "Check-list quotidienne opérateur", desc: "Mettre en place une check-list de démarrage poste pour les points critiques." });
+  } else {
+    actions.push({ icon: "✅", title: "Maintenance trimestrielle", desc: "Situation sous contrôle — maintenir le rythme de maintenance actuel." });
+    actions.push({ icon: "📈", title: "Surveiller la tendance", desc: "La machine montre des signes de stabilité — continuer le suivi mensuel." });
+  }
+  return actions;
+}
+
+let activeChart1 = null, activeChart2 = null;
+
+function renderMachine(name) {
+  const d = DATA[name];
+  if (!d) return;
+
+  // Highlight sidebar
+  document.querySelectorAll('.machine-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`[data-machine="${name}"]`)?.classList.add('active');
+
+  const rColor = RISK_COLORS[d.risk];
+
+  // Type tags
+  const typeTags = Object.entries(d.type_dist).map(([t,v]) => {
+    const c = TYPE_COLORS[t] || '#6b7280';
+    return `<span class="type-tag" style="background:${c}22;color:${c};border:1px solid ${c}44">${t} ${v}</span>`;
+  }).join('');
+
+  // Predictions
+  const predCards = d.pred.map(p => `
+    <div class="pred-card ${p.level}">
+      <div class="pred-month">${p.month}</div>
+      <div class="pred-pannes" style="color:${p.level==='high'?'var(--danger)':p.level==='med'?'var(--warn)':'var(--ok)'}">${p.pannes} pannes</div>
+      <div class="pred-heures">~${p.heures}h d'arrêt</div>
+      <div class="pred-reco">${p.level==='high'?'⚠️ Risque fort — prévoir intervention':'p.level'==='med'?'⚡ Surveiller':'✅ Risque faible'}</div>
+    </div>
+  `).join('');
+
+  // Fix pred reco text
+  const predCards2 = d.pred.map(p => {
+    const recoTxt = p.level==='high' ? '⚠️ Risque élevé — préparer une intervention préventive'
+      : p.level==='med' ? '⚡ Surveiller — effectuer contrôle en début de mois'
+      : '✅ Risque faible — maintenance standard';
+    return `
+      <div class="pred-card ${p.level}">
+        <div class="pred-month">${p.month}</div>
+        <div class="pred-pannes" style="color:${p.level==='high'?'var(--danger)':p.level==='med'?'var(--warn)':'var(--ok)'}">${p.pannes} pannes</div>
+        <div class="pred-heures">≈ ${p.heures}h d'arrêt estimé</div>
+        <div class="pred-reco">${recoTxt}</div>
+      </div>`;
+  }).join('');
+
+  const actions = getActions(name, d);
+  const actionHTML = actions.map(a => `
+    <div class="action-item">
+      <span class="action-icon">${a.icon}</span>
+      <div class="action-text"><strong>${a.title}</strong><span>${a.desc}</span></div>
+    </div>`).join('');
+
+  document.getElementById('content').innerHTML = `
+    <div class="section-header">
       <div>
-        <h1>Modele predictif des pannes</h1>
-        <p>Ligne BD12KG - Analyse historique et previsions par machine</p>
+        <div class="machine-title">${name.charAt(0).toUpperCase()+name.slice(1)}</div>
+        <div class="machine-subtitle">${d.total_pannes} interventions enregistrées · Période Jan 2025 – Jun 2026</div>
+        <div class="type-tags">${typeTags}</div>
+      </div>
+      <div class="risk-badge" style="background:${RISK_BG[d.risk]};color:${rColor};border:1px solid ${rColor}44">
+        ${d.risk}
       </div>
     </div>
-    <div class="live-badge">DONNEES REELLES</div>
-  </header>
 
-  <div class="kpi-strip">
-    <div class="kpi"><div class="kpi-label">Total interventions</div><div class="kpi-value accent">4 500</div></div>
-    <div class="kpi"><div class="kpi-label">Heures d'arret cumulees</div><div class="kpi-value danger">8 535 h</div></div>
-    <div class="kpi"><div class="kpi-label">MTTR moyen global</div><div class="kpi-value warn">1,90 h</div></div>
-    <div class="kpi"><div class="kpi-label">Machines analysees</div><div class="kpi-value ok">12</div></div>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Nb total pannes</div>
+        <div class="metric-value" style="color:var(--accent)">${d.total_pannes}</div>
+        <div class="metric-desc">interventions curatives</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Heures d'arrêt totales</div>
+        <div class="metric-value" style="color:var(--danger)">${d.total_heures.toFixed(0)} h</div>
+        <div class="metric-desc">perte de disponibilité</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">MTTR moyen</div>
+        <div class="metric-value" style="color:var(--warn)">${d.mttr.toFixed(2)} h</div>
+        <div class="metric-desc">durée moy. d'intervention</div>
+      </div>
+    </div>
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">📈 Heures d'arrêt mensuelles (historique)</div>
+        <div class="chart-wrap"><canvas id="chartLine"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🔧 Répartition par type de panne</div>
+        <div class="chart-wrap"><canvas id="chartDoughnut"></canvas></div>
+      </div>
+    </div>
+
+    <div class="pred-panel">
+      <div class="pred-title"><span class="pred-icon">🤖</span> Prédictions IA — 3 prochains mois (Juil–Sep 2026)</div>
+      <div class="pred-grid">${predCards2}</div>
+    </div>
+
+    <div class="actions-panel">
+      <div class="pred-title"><span class="pred-icon">📋</span> Actions recommandées</div>
+      ${actionHTML}
+    </div>
+  `;
+
+  // Chart 1 — Line
+  if (activeChart1) activeChart1.destroy();
+  if (activeChart2) activeChart2.destroy();
+
+  const ctx1 = document.getElementById('chartLine').getContext('2d');
+  activeChart1 = new Chart(ctx1, {
+    type: 'bar',
+    data: {
+      labels: d.months,
+      datasets: [{
+        label: 'Heures arrêt',
+        data: d.monthly_heures,
+        backgroundColor: d.monthly_heures.map((v,i) => {
+          const mx = Math.max(...d.monthly_heures);
+          const ratio = v/mx;
+          if (ratio > 0.7) return 'rgba(239,68,68,0.8)';
+          if (ratio > 0.4) return 'rgba(249,115,22,0.7)';
+          return 'rgba(245,158,11,0.6)';
+        }),
+        borderRadius: 4,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } },
+        y: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: '#21262d' } }
+      }
+    }
+  });
+
+  // Chart 2 — Doughnut
+  const ctx2 = document.getElementById('chartDoughnut').getContext('2d');
+  const typeKeys = Object.keys(d.type_dist);
+  const typeVals = Object.values(d.type_dist);
+  const typeColorsArr = typeKeys.map(k => TYPE_COLORS[k] || '#6b7280');
+  activeChart2 = new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: typeKeys,
+      datasets: [{ data: typeVals, backgroundColor: typeColorsArr, borderWidth: 2, borderColor: '#161b22' }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#8b949e', font: { size: 10 }, padding: 10, boxWidth: 12 }
+        }
+      },
+      cutout: '60%'
+    }
+  });
+}
+
+// Build sidebar
+const machineListEl = document.getElementById('machineList');
+const sorted = Object.entries(DATA).sort((a,b) => b[1].risk_level - a[1].risk_level || b[1].total_heures - a[1].total_heures);
+
+sorted.forEach(([name, d]) => {
+  const rColor = RISK_COLORS[d.risk];
+  const maxH = 961;
+  const barW = Math.round((d.total_heures / maxH) * 100);
+  const el = document.createElement('div');
+  el.className = 'machine-item';
+  el.setAttribute('data-machine', name);
+  el.innerHTML = `
+    <div>
+      <div class="machine-dot" style="background:${rColor}"></div>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div class="machine-name">${name.charAt(0).toUpperCase()+name.slice(1)}</div>
+      <div class="machine-hours">${d.total_heures.toFixed(0)}h · ${d.total_pannes} int.</div>
+      <div class="risk-bar-wrap"><div class="risk-bar" style="width:${barW}%;background:${rColor}"></div></div>
+    </div>
+  `;
+  el.onclick = () => renderMachine(name);
+  machineListEl.appendChild(el);
+});
+
+// Auto-select first machine
+renderMachine(sorted[0][0]);
+</script>
+</body>
+</html>
